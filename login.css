@@ -1,0 +1,75 @@
+
+/*
+/****************************/
+/*   LOGIN PAGE TEMPLATE   */
+/****************************/
+
+/* TargetIMC Cambiar el fondo */
+
+
+body.login {
+    
+    /* background-image: url('/wp-content/uploads/2024/06/logo-blanco-cimne-slogan.png'); */
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    background-position: right;
+    background-color: #02a0a54a; 
+    
+}
+
+/* TargetIMC Reemplazar Logo */
+
+.login h1 {
+    text-align: center;
+    border: 2px solid #fff;
+    background: #004996;
+    border-radius: 10px;
+    /*-webkit-box-shadow: 10px 10px 10px 0px #636262;
+    -moz-box-shadow: 10px 10px 10px 0px #636262;
+    box-shadow: 10px 10px 10px 0px #636262;*/
+
+}
+
+.login h1 a {
+  margin-top: 10%;
+  background-size: 120px;
+  width: 100%;
+  background-image: url('/wp-content/uploads/2024/09/logo-blanco-cimne-web.png');
+  /*background-size: 250px 76px; /*Modificar aquí para que coincida con el tamaño del logo */
+  /*height: 76px; /*Modificar aquí para que coincida con el tamaño del logo */
+  /*width: 76px; /*Modificar aquí para que coincida con el tamaño del logo */
+}
+
+/* Eliminar el enlace de password olvidado, Eliminar el enlace de volver a la Home, Elimina mensaje de logeado/no logetado */
+p#nav, p#backtoblog, #login-message {
+    display: none;
+}
+
+
+.login form {
+    
+    background: #004996;
+    border: 2px solid #fff;
+    -webkit-box-shadow: 0 1px 3px rgba(0, 0, 0, .04);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, .04);
+    border-radius: 10px;
+    color: #F3921A;
+}
+
+.wp-core-ui .button-primary {
+    background: #F3921A;
+    border-color: #F3921A;
+    color: #fff;
+}
+.wp-core-ui .button-primary:hover {
+    background: #02A0A5;
+    border-color: #02A0A5;
+}
+#language-switcher > input.button {
+    color: #F3921A;
+    border-color: #F3921A;
+}
+
+#language-switcher > label > span.dashicons.dashicons-translation {
+    color: #F3921A;
+}
