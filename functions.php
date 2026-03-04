@@ -120,6 +120,18 @@ add_action('wp_head', function() {
     }
 });
 
+/*====================================================
+#Mostrar título del padre en páginas hijas - Shortcode
+=======================================================*/
+function mostrar_titulo_padre_shortcode() {
+    $parent_id = wp_get_post_parent_id( get_the_ID() );
+    if ( $parent_id ) {
+        return get_the_title( $parent_id );
+    }
+    return ''; // No devuelve nada si no tiene padre
+}
+add_shortcode( 'titulo_padre', 'mostrar_titulo_padre_shortcode' );
+
 /*================================================
 #CONSOLE LOG FUNCTION
 ================================================*/
@@ -376,6 +388,22 @@ add_action('wp_enqueue_scripts', 'cimne_insertar_js');
 #Orden descendente (más reciente primero)
 ======================================================================================*/
 
+// Para la búsqueda general
+function date_search_filter($query) {
+
+    if ( ! is_admin() && $query->is_main_query() ) {
+
+        if ($query->is_search) {
+        //console_log('Ording search results by date');
+
+            $query->set( 'orderby', 'post_date');
+
+        }
+    }
+
+}
+add_action( 'pre_get_posts', 'date_search_filter' );
+
 // Para la pagina de eventos
 function change_query_order( $query ) {
 
@@ -387,6 +415,7 @@ function change_query_order( $query ) {
     // Aplicar solo cuando se está viendo la categoría with slug 'events'
     if ( $query->is_category( 'events' ) || $query->is_category( 'eventos' ) || $query->is_category( 'esdeveniments' ) ) {
         // Ordenar por el metadato 'date' de forma numérica ascendente
+        //console_log('Modifying query order for events category');
         $query->set( 'meta_key', 'date' );
         $query->set( 'orderby', 'meta_value_num' );
         $query->set( 'order', 'DESC' );
@@ -490,24 +519,24 @@ add_filter('et_builder_blog_query', 'custom_blog_filter_and_order', 10, 2);
 
  No FUNCIONA BIEN, revisar
 ======================================================================================*/
-function auto_featured_image() {
-    if ( !is_singular() ) {
-        return;
-    }
-    if ( !has_post_thumbnail() ) {
-        global $post;
-        $attachment = get_posts( array(
-            'post_type' => 'attachment',
-            'posts_per_page' => 1,
-            'post_mime_type' => 'image',
-            'post_parent' => $post->ID
-        ) );
-        if ( !empty( $attachment ) ) {
-            set_post_thumbnail( $post, $attachment[0]->ID );
-        }
-    }
-}
-add_action( 'the_post', 'auto_featured_image' );
+// function auto_featured_image() {
+//     if ( !is_singular() ) {
+//         return;
+//     }
+//     if ( !has_post_thumbnail() ) {
+//         global $post;
+//         $attachment = get_posts( array(
+//             'post_type' => 'attachment',
+//             'posts_per_page' => 1,
+//             'post_mime_type' => 'image',
+//             'post_parent' => $post->ID
+//         ) );
+//         if ( !empty( $attachment ) ) {
+//             set_post_thumbnail( $post, $attachment[0]->ID );
+//         }
+//     }
+// }
+// add_action( 'the_post', 'auto_featured_image' );
 
 
 
@@ -1172,12 +1201,12 @@ function pantalla_envio_email_post() {
                                     </td>
                                     <td><br>
                                     </td>
-                                    <td class='links'><a href='mailto:info@cimne.upc.edu' class='moz-txt-link-freetext'
-                                        moz-do-not-send='true' style='color:#ffffff;'>info@cimne.upc.edu</a>
+                                    <td class='links'><a href='mailto:cimne@cimne.upc.edu' class='moz-txt-link-freetext'
+                                        moz-do-not-send='true' style='color:#ffffff;'>cimne@cimne.upc.edu</a>
                                         | <a href='http://www.cimne.com' moz-do-not-send='true' style='color:#ffffff;'>www.cimne.com</a></td>
                                     <td><br>
                                     </td>
-                                    <td style='color:#ffffff;'>Copyright © 2025 CIMNE.<br>
+                                    <td style='color:#ffffff;'>Copyright © 2026 CIMNE.<br>
                                         All rights reserved.</td>
                                     </tr>
                                 </tbody>

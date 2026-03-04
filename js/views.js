@@ -872,7 +872,7 @@ const generateStaffProfileHTML = ({ IDSIGPro, Nombre, Apellido1, Apellido2, Emai
 
     html += full_name ? `<h4 class="staff-profile-header-name">${full_name}</h4>` : '';
     
-    html += Email ? `<p id="${Email}" class="staff-email copy-email-to-clipboard">${getMailCimne(Email)}</p>` : '';
+    html += Email ? `<p id="${Email}" class="staff-email copy-email-to-clipboard">${wsStrings[locale].copy_email}</p>` : '';
     html += Telefono1 ? `<p class="staff-profile-header-tlf">${Telefono1 || ''}</p>` : '';
     html += NombreSede ? `<h5 class="staff-profile-header-branch">${wsStrings[locale].branch}</h5>
                        <p class="staff-profile-branch">${NombreSede}</p>` : '';
@@ -1169,53 +1169,87 @@ const generateThesesHTML = ( data ) => {
 
 
 
+
+
 /*-----------------------------------------------------------------
     Genera el HTML del listado de premios
 ------------------------------------------------------------------*/
 
-const  generateAwardsHTML = ( data ) => {
+const generateAwardsHTML = ( data, isOnate = false) => {
     // const heading = data.values[0][0];
     // console.log(heading);
     // console.log(data);
+    
+    // Convertir isOnate a booleano
+    const isOnateBoolean = isOnate === 'true' || isOnate === true;
+    
+    //console.log('Generating awards HTML. Data:', data, 'Is Onate:', isOnateBoolean);
+ 
+
     const awardsContainer = document.querySelector('#awards-container');
     let html = '<div id="awards-to-scientists">';
     let awardsLines = '';
 
-
-    data.forEach((award) => {
-
-        console.log(award.name, award.position, award.imgUrl, award.awards);
-
-        awardsLines = award.awards.split(/\r?\n/);
-
-        console.log(awardsLines.length);
-
-        
+    if (isOnateBoolean) {
         html += `
-            <div class="profile-in-awards">
-                <div class="profile-pic" style="background-image: url('${award.imgUrl || '/wp-content/uploads/2024/09/logo-color-cimne-web.png'}');">
+            <div class="awards-profile">
+                <ul class="awards-list">`;
 
-                </div>
-                <div class="awards-profile">
-                    <p class="name">${award.name}</p> 
-                    <p class="category">${award.position}</p> 
-                    <p class="awards">
-                        <details>
-                            <summary>Awards</summary>
-                            <ul class="awards-list">`;
-
-        awardsLines.forEach((line) => {
-            html += `<li>${line}</li>`;
-        });
         
-        html += `</ul>
-                    </details>    
-                        </p>
+        data.forEach((award) => {
+            
+                awardsLines = award.awards.split(/\r?\n/);
+                if (award.name.toLowerCase().includes('oñate')) {
+                    //console.log(`Including award for ${award.name} (Oñate)`);
+                    awardsLines.forEach((line) => {
+                        //console.log(`Adding line to HTML: ${line}`);
+                        html += `<li>${line}</li>`;
+                    });
+                
+                    html += `</ul>
+                            </div>`;
+                }
+            }
+        )
+
+        //console.log('Final HTML for Oñate awards:', html);
+    } else {
+
+        data.forEach((award) => {
+
+            //console.log(award.name, award.position, award.imgUrl, award.awards);
+
+            awardsLines = award.awards.split(/\r?\n/);
+
+            //console.log(awardsLines.length);
+
+            
+            html += `
+                <div class="profile-in-awards">
+                    <div class="profile-pic" style="background-image: url('${award.imgUrl || '/wp-content/uploads/2024/09/logo-color-cimne-web.png'}');">
+
                     </div>
-                </div>
-  <!-- Lo que se repite -->`;
-        
-    });
+                    <div class="awards-profile">
+                        <p class="name">${award.name}</p> 
+                        <p class="category">${award.position}</p> 
+                        <p class="awards">
+                            <details>
+                                <summary>Awards</summary>
+                                <ul class="awards-list">`;
+
+            awardsLines.forEach((line) => {
+                html += `<li>${line}</li>`;
+            });
+            
+            html += `</ul>
+                        </details>    
+                            </p>
+                        </div>
+                    </div>
+    <!-- Lo que se repite -->`;
+            
+        });
+    }
     html += `</div>`;
     awardsContainer.innerHTML = html;
 }

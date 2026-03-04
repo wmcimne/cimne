@@ -54,6 +54,8 @@ function loadPageData(pageType, params, isFilter = false) {
             const today = new Date().toISOString().split("T")[0];
             params['date_to'] = params['date_to'] || today; /* NEW CODE */
             return loadPublicaciones(params);
+        case 'onate':
+             return loadPublicaciones(params); /* NEW CODE */
         case 'cluster':
         case 'rtd':
             //console.log('loadPageData - cluster:', pageType);
@@ -92,6 +94,9 @@ const getPageType = () => {
 
     } else if (apiCall.classList.contains('publications-page')) {
         pageType = 'publications';
+    } else if (apiCall.classList.contains('onate-page')) {
+        pageType = 'onate';
+        params['author'] = 'onate'; // Añade el autor 'onate' a los parámetros para filtrar publicaciones
     } else if (apiCall.classList.contains('cluster-page')) {
         pageType = 'cluster';
         clusterCode = apiCall.getAttribute('cluster-code');
@@ -241,7 +246,10 @@ const renderPageData = (pageType, data, filterData) => {
             generatePublicationsFilter();
 
             break;
-
+        case 'onate':
+            //console.log("Render ONATE publications data:", data);
+            generatePublicationsHTML(data);
+    
         case 'cluster':
         case 'rtd':
             

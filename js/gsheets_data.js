@@ -65,7 +65,7 @@ const convertToKeyValue = (data) => {
         keys = ["name", "description", "client", "period", "partners", "abstract", "website", "image", "files"];   
     } else if (urlPathname.includes(wsStrings[locale].phd_thesis)) {
         keys = ["title", "readingDate", "author", "directors", "programme", "qualification", "url"];
-    } else if (urlPathname.includes(wsStrings[locale].awards)) {
+    } else if (urlPathname.includes(wsStrings[locale].awards) || urlPathname.includes("eonate")) {
         keys = ["name", "position", "imgUrl", "awards"];
     } else if (urlPathname.includes('oko-card')) {
         keys = ["id", "email", "link", "linkedin", "x"];
@@ -105,7 +105,7 @@ window.addEventListener('load', async (event) => {
                 generateThesesHTML(convertedData);
             } else if (gSheetCall.getAttribute('rl-code') == "awards") {
                 console.log("Generating awards HTML...");
-                generateAwardsHTML(convertedData);
+                generateAwardsHTML(convertedData, gSheetCall.getAttribute('onate'));
             }else if (gSheetCall.getAttribute('rl-code') == "oko-card") {
                 console.log("Generating OKO cards HTML social media...");
                 const oko_id = new URLSearchParams(querystring).get('id');

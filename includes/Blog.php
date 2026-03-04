@@ -1670,7 +1670,7 @@ get_template_part( '/includes/builder/module/helpers/Overlay.php' );
 					 */
 					if (!empty( $categoriesArray ) ) {
 						foreach( $categoriesArray as $category ) {
-						console_log("Categoria: " . esc_html( $category->name ) . "   ID -->  " . $id);
+						//console_log("Categoria: " . esc_html( $category->name ) . "   ID -->  " . $id);
 							if ( $category->parent != 0 ) {
 								//console_log("Categoria: " . esc_html( $category->name ) . "   ID -->  " . $id);
 								$parent_cat =  get_category( $category->parent )->name;
