@@ -1,6 +1,6 @@
 jQuery(function($){
 
-  //alert('Hola, bienvenido a la nueva web del CIMNE. Estamos trabajando para mejorar tu experiencia. Si tienes alguna sugerencia o encuentras algún error, no dudes en contactarnos. ¡Gracias por tu paciencia!');
+  
 
   /*--------------------------------------------------------------
     Menu pantalla de escritorio
