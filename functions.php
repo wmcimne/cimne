@@ -368,6 +368,17 @@ function cimne_insertar_js(){
     );
 
     wp_enqueue_script(
+        'cimne_slick', 
+        get_stylesheet_directory_uri(). '/js/slick.min.js', 
+        array(), 
+        '1.0', 
+        array( 'strategy' => 'defer',
+                'in_footer' => true
+        )
+    );
+
+
+    wp_enqueue_script(
         'cimne_data_from_gdrive', 
         get_stylesheet_directory_uri(). '/js/gsheets_data.js', 
         array(), 
