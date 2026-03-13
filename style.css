@@ -221,7 +221,7 @@ span.list-website:hover del,
 
 /* First block */
 div.first-block {
-  padding-top: 143px !important;
+  padding-top: 0 !important;
 }
 
 @media (max-width: 768px) {
@@ -909,7 +909,7 @@ to {
 /*
   Desktop menu bar
 */
-
+/*
 [id*="main-bar"] {
   -webkit-box-align: center;
       -ms-flex-align: center;
@@ -940,6 +940,7 @@ body.home [id*="main-bar"] .category-menu-left li.first-level>a {
 }
 
 /* Logo a la izquierda e items de menú a la derecha */
+/*
 .top-bar .et_pb_menu__wrap {
   -webkit-box-pack: end !important;
   -ms-flex-pack: end !important;
@@ -1000,6 +1001,7 @@ body.home [id*="main-bar"] .category-menu-left li.first-level>a {
 /*
   Desktop top bar
 */
+/*
 .top-bar ul li {
   font-family: 'Poppins';
   font-style: normal;
@@ -1017,6 +1019,7 @@ body.home [id*="main-bar"] .category-menu-left li.first-level>a {
 /* 
   Desktop dropdown menu
 */
+/*
 
 .dropdown-menu {
   visibility: hidden;
@@ -1034,7 +1037,7 @@ li.intranet-icon {
   transition: 300ms all cubic-bezier(.4, 0, .2, 1);
   position: fixed !important;
   top: 144px;
-  /* top: 104px; */
+  /* top: 104px; *//*
   left: 0px;
 }
 
@@ -1084,7 +1087,7 @@ li.intranet-icon {
 }
 
 /* Se añaden links a los items de menú */
-
+/*
 .dropdown-menu .dropdown-menu-item {
   padding: 10px 0 !important;
 }
@@ -1103,7 +1106,7 @@ li.intranet-icon {
 /* 
    Desktop search imput 
 */
-
+/*
 input.et_pb_menu__search-input::-webkit-input-placeholder {
   font-size: 16px !important;
 }
@@ -1124,7 +1127,7 @@ input.et_pb_menu__search-input::placeholder {
   font-size: 16px !important;
 }
 
-/* Search field colors in no home*/
+/* Search field colors in no home*//*
 #menu-right input.et_pb_menu__search-input {
   color: rgb(255, 255, 255);
   border-bottom: 1px solid #fff;
@@ -1158,6 +1161,225 @@ input.et_pb_menu__search-input::placeholder {
 
 #menu-right .et_pb_menu__close-search-button::after {
   color: #fff;
+} */
+
+/* ===== HEADER BASE ===== */
+
+.gh-header {
+  height: 104px;
+  display: flex;
+  align-items: center;
+  padding: 0 !important;
+}
+
+.gh-row {
+  max-width: 1400px !important;
+  margin: 0 auto !important;
+  height: 104px;
+  display: flex;
+  align-items: center;
+}
+
+.gh-col {
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+/* Top bar */
+.gh-top-bar .et_pb_menu__wrap {
+  -webkit-box-pack: end !important;
+  -ms-flex-pack: end !important;
+  justify-content: flex-end !important;
+  padding-right: 2rem;
+}
+
+/* ===== MENU FLEX ===== */
+
+.gh-menu .et-menu {
+  display: flex !important;
+  align-items: center;
+  width: 100%;
+}
+
+/* If using Divi classic navigation */
+.gh-menu ul.nav {
+  display: flex !important;
+  align-items: center;
+  width: 100%;
+}
+
+/* ===== Move the last item to the right ===== */
+
+.gh-menu .et-menu > li:last-child,
+.gh-menu ul.nav > li:last-child {
+  margin-left: auto !important;
+}
+
+/* Prevent the CTA from having extra margin */
+.gh-menu .et-menu > li:last-child,
+.gh-menu ul.nav > li:last-child {
+  margin-right: 0;
+}
+
+/* ===== Fixed height and vertical alignment ===== */
+
+.gh-menu .et-menu > li > a,
+.gh-menu ul.nav > li > a {
+  line-height: 104px;
+  height: 50px;
+  padding-left: 10px;
+  padding-right: 10px;
+}
+
+.gh-menu .et_pb_menu__menu,
+.gh-menu .et-menu-nav,
+.gh-menu .et_pb_menu__menu ul{
+    width: 100% !important;
+    align-items: center !important;
+}
+
+
+/* For Divi classic navigation, ensure the menu container also stretches */
+.gh-menu.et_pb_menu .et_pb_menu__wrap  {
+ 
+    flex: auto !important;
+    display: flex;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    align-items: baseline !important;
+    width: 100% !important;
+}
+
+/* ===== CTA button style ===== */
+
+.gh-menu .et-menu > li:last-child > a,
+.gh-menu ul.nav > li:last-child > a {
+    height: 50px;
+    padding: 10px 20px;
+    background: transparent;
+    color: #02A0A5!important;
+    border: 1px solid #02A0A5;
+    border-radius: 32px;
+    line-height: normal;
+}
+/* Home exception */
+.gh-menu.gh-home-menu .et-menu > li:last-child > a,
+.gh-menu.gh-home-menu ul.nav > li:last-child > a {
+    color: #fff !important;
+    border: #fff 1px solid !important;
+
+}
+
+.gh-menu.et_pb_menu_1_tb_header .et_pb_menu__icon.et_pb_menu__search-button {
+    color: #004996 !important;
+    font-weight: 800;
+    border: 1px solid #004996;
+    padding: 15px;
+    border-radius: 25px;
+}
+/* Home exception */
+.gh-menu.gh-home-menu.et_pb_menu_1_tb_header .et_pb_menu__icon.et_pb_menu__search-button {
+    color: #fff !important;
+    border: 1px solid #fff;
+}
+
+/* ===== Hover effects ===== */
+.gh-header:hover .et-menu > li > a,
+.gh-header:hover ul.nav > li > a {
+    color: #fff !important;
+    transition: color 0.3s ease;
+}
+#desktop-main-header.gh-header:hover {
+    background-color: #004996 !important;
+    transition: background-color 0.3s ease;
+}
+
+.gh-header:hover .gh-menu.et_pb_menu_1_tb_header .et_pb_menu__icon.et_pb_menu__search-button {
+    color: #fff !important;
+    border: 1px solid #fff;
+}
+
+.gh-header:hover .gh-menu .et-menu > li:last-child > a,
+.gh-header:hover .gh-menu ul.nav > li:last-child > a {
+    border: 1px solid #fff;
+}
+.gh-header .gh-menu.et_pb_menu_1_tb_header .et_pb_menu__icon.et_pb_menu__search-button:hover, 
+.gh-header .gh-menu .et-menu > li:last-child:hover > a,
+.gh-header .gh-menu ul.nav > li:last-child:hover > a {
+    background-color:  #fff;
+    color: #004996 !important;
+}
+/* Hide original logo on hover and show the new one */
+.gh-header:not(.gh-home-header):hover .et_pb_menu__logo img {
+    opacity: 0;
+}
+
+.gh-header:not(.gh-home-header) .et_pb_menu__logo {
+    position: relative;
+}
+
+.gh-header:not(.gh-home-header):hover .et_pb_menu__logo::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: url('/wp-content/uploads/2024/09/logo-blanco-cimne-web.png');
+    background-size: contain;
+    background-repeat: no-repeat;
+    pointer-events: none; /* Ensure the hover overlay doesn't block the link */
+}
+/* Add a subtle underline on hover for non-CTA items */
+.gh-menu li:hover > a {
+    border-bottom: 3px solid #fff !important;
+}
+.gh-menu li:last-child:hover > a {
+    border-bottom: 1px solid #fff !important;
+    color: #004996;
+    background-color: #fff;
+}
+
+/* ===== Megamenu ===== */
+.gh-menu .et-menu .sub-menu {
+    background-color: #004996 !important;
+    display: flex !important;
+    flex-wrap: wrap !important;
+    justify-content: space-between !important;
+}
+
+/* ===== Dropdown ===== */
+.desktop-menu-tab {
+    /* visibility: hidden; */
+    /* opacity: 0; */
+    -webkit-transition: 300ms all cubic-bezier(.4, 0, .2, 1);
+    -o-transition: 300ms all cubic-bezier(.4, 0, .2, 1);
+    transition: 300ms all cubic-bezier(.4, 0, .2, 1);
+    position: fixed !important;
+    top: 144px;
+    /* top: 104px; */
+    left: -9999px;
+    /* display: none; */
+}
+
+.et_pb_menu_1_tb_header.et_pb_menu ul li .desktop-menu-tab a {
+    font-weight: 400 !important;
+    transition: font-size 0.3s ease !important;
+}
+.et_pb_menu_1_tb_header.et_pb_menu ul li .desktop-menu-tab a:hover {
+    opacity: 1 !important;
+    font-size: 22px;
+}
+
+.gh-menu input.et_pb_menu__search-input {
+    color: rgb(255, 255, 255);
+    border-bottom: 1px solid #fff;
+}
+.et_pb_menu_1_tb_header .et_pb_menu__icon.et_pb_menu__close-search-button,
+.gh-menu input.et_pb_menu__search-input::placeholder {
+    font-size: 16px;
+    color: rgb(255, 255, 255) !important;
 }
 
 
@@ -1231,7 +1453,7 @@ li.mobile-first-level-bottom-item span:last-child a {
       flex-wrap: nowrap;
 }
 
-#mobile_menu4>li.menu-item.wpml-ls-item.wpml-ls-menu-item {
+.mobile-menu li.menu-item.wpml-ls-item.wpml-ls-menu-item {
   display: -webkit-inline-box;
   display: -ms-inline-flexbox;
   display: inline-flex;
@@ -1239,11 +1461,11 @@ li.mobile-first-level-bottom-item span:last-child a {
   padding-top: 10px;
 }
 
-#mobile_menu4>li.menu-item.wpml-ls-item.wpml-ls-menu-item>a {
+.mobile-menu li.menu-item.wpml-ls-item.wpml-ls-menu-item>a {
   color: #02A0A5 !important;
 }
 
-#mobile_menu4>li.menu-item.wpml-ls-item.wpml-ls-menu-item.wpml-ls-current-language>a {
+.mobile-menu li.menu-item.wpml-ls-item.wpml-ls-menu-item.wpml-ls-current-language>a {
   font-weight: bold;
 }
 
@@ -1333,11 +1555,19 @@ li.menu-mobile-jobs {
 
 /* search icon en función de si es home */
 .mobile-menu-no-home button.et_pb_menu__search-button {
-  border: #004996 solid 1px;
+    color: #004996;
+    font-weight: 800;
+    border: 1px solid #004996;
+    padding: 15px;
+    border-radius: 25px;
 }
 
 .mobile-menu-home button.et_pb_menu__search-button {
-  border: #fff solid 1px;
+    color: #fff;
+    font-weight: 800;
+    border: #fff solid 1px;
+    padding: 15px;
+    border-radius: 25px;
 }
 
 /* search field font size*/
