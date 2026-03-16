@@ -1,3 +1,107 @@
+
+  
+/*----------------------------------------------------------------------------------------
+                MENU DESKTOP:
+    Prevent a flash of tab content before JS has had a chance to wrap it into dropdowns.
+    This hides tabs immediately (even before DOMContentLoaded) and relies on the JS dropdown
+    behavior to show them when appropriate.
+------------------------------------------------------------------------------------------*/
+
+const _desktopMenuTabsPreHide = document.querySelectorAll('.desktop-menu-tab');
+_desktopMenuTabsPreHide.forEach((tab) => {
+  console.log('Pre-hiding desktop menu tab:', tab);
+  // Keep tabs off-screen until they are attached to a dropdown.
+  tab.style.left = '-9999px';
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+  const desktopMenuItems = document.querySelectorAll('#menu-desktop-main .menu-item');
+  const desktopMenuTabs = document.querySelectorAll('.desktop-menu-tab');
+
+  // If there are more tabs than menu items, we only attach up to the number of items.
+  const count = Math.min(desktopMenuItems.length, desktopMenuTabs.length);
+
+  const setOpen = (menuItem, dropdown, isOpen) => {
+    // If there is a pending close, cancel it while opening.
+    if (dropdown._closeTimer) {
+      clearTimeout(dropdown._closeTimer);
+      dropdown._closeTimer = null;
+    }
+
+    dropdown.classList.toggle('open', isOpen);
+    menuItem.classList.toggle('dropdown-open', isOpen);
+    dropdown.style.display = isOpen ? '' : 'none';
+    dropdown.setAttribute('aria-hidden', String(!isOpen));
+
+    const tab = dropdown.querySelector('.desktop-menu-tab');
+    if (tab) {
+      tab.style.left = isOpen ? '0' : '-9999px';
+    }
+
+    const link = menuItem.querySelector('a');
+    if (link) {
+      link.setAttribute('aria-expanded', String(isOpen));
+    }
+  };
+
+  const scheduleClose = (menuItem, dropdown, delay = 250) => {
+    if (dropdown._closeTimer) return;
+    dropdown._closeTimer = setTimeout(() => {
+      setOpen(menuItem, dropdown, false);
+      dropdown._closeTimer = null;
+    }, delay);
+  };
+
+  const createDropdown = (tabContent) => {
+    const dropdown = document.createElement('div');
+    dropdown.classList.add('desktop-menu-dropdown');
+    dropdown.setAttribute('aria-hidden', 'true');
+    dropdown.style.display = 'none';
+    dropdown.appendChild(tabContent);
+    return dropdown;
+  };
+
+  for (let i = 0; i < count; i++) {
+    const menuItem = desktopMenuItems[i];
+    const tabContent = desktopMenuTabs[i];
+
+    // Wrap the tab content in a dropdown container for styling.
+    const dropdown = createDropdown(tabContent);
+
+    menuItem.appendChild(dropdown);
+
+    // Hover behavior (desktop)
+    menuItem.addEventListener('mouseenter', () => setOpen(menuItem, dropdown, true));
+    menuItem.addEventListener('mouseleave', () => scheduleClose(menuItem, dropdown));
+
+    // Keep open when the mouse moves between the item and the dropdown.
+    dropdown.addEventListener('mouseenter', () => setOpen(menuItem, dropdown, true));
+    dropdown.addEventListener('mouseleave', () => scheduleClose(menuItem, dropdown));
+
+    // Click behavior (touch / toggle)
+    menuItem.addEventListener('click', (event) => {
+      // Ignore clicks inside the dropdown content
+      if (event.target.closest('.desktop-menu-dropdown')) return;
+
+      const link = menuItem.querySelector('a');
+      const isOpen = dropdown.classList.contains('open');
+
+      // If the menu item has a real link, prevent navigation only when opening.
+      const href = link ? link.getAttribute('href') : null;
+      const isRealLink = href && href !== '#' && !href.startsWith('javascript');
+
+      if (isRealLink && isOpen) {
+        return; // allow navigation when already open
+      }
+
+      event.preventDefault();
+      setOpen(menuItem, dropdown, !isOpen);
+    });
+  }
+});
+
+
+
 jQuery(function($){
 
   
@@ -6,63 +110,62 @@ jQuery(function($){
     Menu pantalla de escritorio
   ----------------------------------------------------------------*/
 
-  $(function() {
-    // Inserta los dropdowns creados a los items del menú primer nivel
-    $('.dropdown-menu').each(function (i) {
-      i = i + 1;
-      let $dropdown = $('.dropdown-menu-' + i);
-      let $mainMenuItem = $('.first-level-' + i + '>a');
+  // $(function() {
+  //   // Inserta los dropdowns creados a los items del menú primer nivel
+  //   $('.dropdown-menu').each(function (i) {
+  //     i = i + 1;
+  //     let $dropdown = $('.dropdown-menu-' + i);
+  //     let $mainMenuItem = $('.first-level-' + i + '>a');
 
-      $dropdown.insertAfter($mainMenuItem);
-    });
+  //     $dropdown.insertAfter($mainMenuItem);
+  //   });
     
   
-    if (!$('body').hasClass('home')) {
-      // console.log('Is home');
+  //   if (!$('body').hasClass('home')) {
+  //     // console.log('Is home');
 
-      $('#main-bar').hover(
-        function() {
-          // console.log('hover');
-          $('.et_pb_menu__logo img').attr('src', '/wp-content/uploads/2024/09/logo-blanco-cimne-web.png');
-          $( this ).addClass( "hover" );
-        }, function() {
-          // console.log('no hover');
-          $('.et_pb_menu__logo img').attr('src', '/wp-content/uploads/2024/09/logo-color-cimne-web.png'); 
-          $( this ).removeClass( "hover" );
-        }
-      );
+  //     $('#main-bar').hover(
+  //       function() {
+  //         // console.log('hover');
+  //         $('.et_pb_menu__logo img').attr('src', '/wp-content/uploads/2024/09/logo-blanco-cimne-web.png');
+  //         $( this ).addClass( "hover" );
+  //       }, function() {
+  //         // console.log('no hover');
+  //         $('.et_pb_menu__logo img').attr('src', '/wp-content/uploads/2024/09/logo-color-cimne-web.png'); 
+  //         $( this ).removeClass( "hover" );
+  //       }
+  //     );
 
-      $('li.first-level').hover(function() {
-        $('.et_pb_menu__logo img').attr('src', '/wp-content/uploads/2024/09/logo-blanco-cimne-web.png');
-          $('#main-bar' ).addClass( "hover" );
+  //     $('li.first-level').hover(function() {
+  //       $('.et_pb_menu__logo img').attr('src', '/wp-content/uploads/2024/09/logo-blanco-cimne-web.png');
+  //         $('#main-bar' ).addClass( "hover" );
         
-      })
-    } else {
-      // console.log('Is not home');
+  //     })
+  //   } else {
+  //     // console.log('Is not home');
 
-      $('li.first-level').hover(
-        function() {
-          //console.log('hover');
-          $('#main-bar').css('background-color', '#004996');
-        }, function() {
-          //console.log('no hover');
-          $('#main-bar').css('background-color', 'transparent');
-        }
-      );
-    }
+  //     $('li.first-level').hover(
+  //       function() {
+  //         //console.log('hover');
+  //         $('#main-bar').css('background-color', '#004996');
+  //       }, function() {
+  //         //console.log('no hover');
+  //         $('#main-bar').css('background-color', 'transparent');
+  //       }
+  //     );
+  //   }
 
-    // Position behaviour - Controla la ocultación de la barra superior del menú y la posición de los dropdowns al hacer scroll  
+  //   // Position behaviour - Controla la ocultación de la barra superior del menú y la posición de los dropdowns al hacer scroll  
 
-    //homePositionParams(dropdowns);
+  //   //homePositionParams(dropdowns);
 
-    window.onscroll = debounce(function () {
-      const dropdowns = document.querySelectorAll('.dropdown-menu');
-      homePositionParams(dropdowns);
+  //   window.onscroll = debounce(function () {
+  //     const dropdowns = document.querySelectorAll('.dropdown-menu');
+  //     homePositionParams(dropdowns);
 	  
-      //$('body').hasClass('home') ? homePositionParams(dropdowns) : noHomePositionParams(dropdowns);
-    }, 100);
-  });
-
+  //     //$('body').hasClass('home') ? homePositionParams(dropdowns) : noHomePositionParams(dropdowns);
+  //   }, 100);
+  // });
 
  /*--------------------------------------------------------------
     Menu pantalla mobile
@@ -190,7 +293,43 @@ jQuery(function($){
   }
 
 
+  /*------------------------------------------------------------------------------
+    Gestiona la visibilidad de las secciones de proyectos. Navegación y filtrado
 
+    *Adaptar a otras listas como publicaciones, etc
+  -------------------------------------------------------------------------------*/
+  
+  let projectMenuItems =  document.getElementById('project-items');
+
+  if (isInPage(projectMenuItems)) {
+    
+    const navTabs = document.querySelectorAll('.projects-nav-item');
+
+    projectMenuItems.addEventListener('click', (event) => {
+
+      let projectItems =  document.querySelectorAll('.list-block');
+
+      if (event.target.closest('#ongoing-projects-item') && !event.target.closest('#ongoing-projects-item').classList.contains('nav-item-active')) {
+
+        navTabs.forEach(tab => tab.classList.toggle('nav-item-active'));
+
+        projectItems.forEach(item => {
+          item.classList.contains('ongoing-project') ?  item.classList.remove('hide-element') : item.classList.add('hide-element');
+        });
+      }
+
+      if (event.target.closest("#finished-projects-item") && !event.target.closest('#finished-projects-item').classList.contains('nav-item-active')) {
+
+        navTabs.forEach(tab => tab.classList.toggle('nav-item-active'));
+
+        projectItems.forEach(item => {
+          item.classList.contains('finished-project') ? item.classList.remove('hide-element') : item.classList.add('hide-element');
+        });
+      }
+    }); 
+  } else {
+    console.log('projectMenuItems not found');
+  }
  
   /*--------------------------------------------------------------
     Toggle tabs: 
@@ -246,44 +385,7 @@ jQuery(function($){
 
 
 
-  /*------------------------------------------------------------------------------
-    Gestiona la visibilidad de las secciones de proyectos. Navegación y filtrado
 
-    *Adaptar a otras listas como publicaciones, etc
-  -------------------------------------------------------------------------------*/
-  
-  let projectMenuItems =  document.getElementById('project-items');
-
-  if (isInPage(projectMenuItems)) {
-    
-    const navTabs = document.querySelectorAll('.projects-nav-item');
-
-    projectMenuItems.addEventListener('click', (event) => {
-
-      let projectItems =  document.querySelectorAll('.list-block');
-
-      if (event.target.closest('#ongoing-projects-item') && !event.target.closest('#ongoing-projects-item').classList.contains('nav-item-active')) {
-
-        navTabs.forEach(tab => tab.classList.toggle('nav-item-active'));
-
-        projectItems.forEach(item => {
-          item.classList.contains('ongoing-project') ?  item.classList.remove('hide-element') : item.classList.add('hide-element');
-        });
-      }
-
-      if (event.target.closest("#finished-projects-item") && !event.target.closest('#finished-projects-item').classList.contains('nav-item-active')) {
-
-        navTabs.forEach(tab => tab.classList.toggle('nav-item-active'));
-
-        projectItems.forEach(item => {
-          item.classList.contains('finished-project') ? item.classList.remove('hide-element') : item.classList.add('hide-element');
-        });
-      }
-    }); 
-  } else {
-    console.log('projectMenuItems not found');
-  }
-  
 
   /*--------------------------------------------------------------
     Formas y efectos en imagenes
