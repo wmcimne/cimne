@@ -167,6 +167,33 @@ function is_page_child_of($parent_slug) {
     }
 }
 
+/*=========================================================================================================================================
+TEMPORAL: REMOVE THIS WHEN PRIME MOVER FIXES THE ISSUE IN THEIR PLUGIN
+# This code removes the 'autoAdjustOldAttachments' filter from the 'wp_get_attachment_url' hook, which is added by the Prime Mover plugin. 
+This filter can cause issues with attachment URLs after migration, so we remove it to prevent conflicts. 
+
+============================================================================================================================================*/
+
+add_action('init', function () {
+    global $wp_filter;
+
+    if (empty($wp_filter['wp_get_attachment_url'])) {
+        return;
+    }
+
+    foreach ($wp_filter['wp_get_attachment_url']->callbacks as $priority => $callbacks) {
+        foreach ($callbacks as $cb) {
+            if (
+                is_array($cb['function']) &&
+                is_object($cb['function'][0]) &&
+                get_class($cb['function'][0]) === 'Codexonics\\PrimeMoverFramework\\utilities\\PrimeMoverConfigUtilities' &&
+                $cb['function'][1] === 'autoAdjustOldAttachments'
+            ) {
+                remove_filter('wp_get_attachment_url', $cb['function'], $priority);
+            }
+        }
+    }
+}, 100);
 /*================================================
 #remove WP Version Info
 ================================================*/
