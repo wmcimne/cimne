@@ -73,7 +73,7 @@ h5,
 }
 
 #main-content #first-section .et_pb_column {
-  padding-top: 160px;
+  padding-top: 25px;
   border-top: none;
 }
 
@@ -1357,7 +1357,7 @@ input.et_pb_menu__search-input::placeholder {
     -o-transition: 300ms all cubic-bezier(.4, 0, .2, 1);
     transition: 300ms all cubic-bezier(.4, 0, .2, 1);
     position: fixed !important;
-    top: 144px;
+    top: calc(104px + var(--top-bar-height, 0px));
     /* top: 104px; */
     left: -9999px;
     /* display: none; */
