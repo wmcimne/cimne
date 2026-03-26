@@ -1,5 +1,4 @@
 
-  
 /*----------------------------------------------------------------------------------------
                 MENU DESKTOP:
     Prevent a flash of tab content before JS has had a chance to wrap it into dropdowns.
@@ -9,7 +8,7 @@
 
 const _desktopMenuTabsPreHide = document.querySelectorAll('.desktop-menu-tab');
 _desktopMenuTabsPreHide.forEach((tab) => {
-  console.log('Pre-hiding desktop menu tab:', tab);
+  //console.log('Pre-hiding desktop menu tab:', tab);
   // Keep tabs off-screen until they are attached to a dropdown.
   tab.style.left = '-9999px';
 });
@@ -98,13 +97,29 @@ document.addEventListener('DOMContentLoaded', () => {
       setOpen(menuItem, dropdown, !isOpen);
     });
   }
+
+  
+  // TOP BAR HEIGHT: Control de altura según scroll
+  // - Cuando scrollY = 0 → --top-bar-height: 40px
+  // - Cuando scrollY > 0 → --top-bar-height: 0px
+  const root = document.documentElement;
+
+  const updateTopBarHeight = () => {
+    const topBarHeight = window.scrollY === 0 ? '40px' : '0px';
+    root.style.setProperty('--top-bar-height', topBarHeight);
+  };
+
+  // Inicializar al cargar
+  updateTopBarHeight();
+
+  // Escuchar scroll con passive para mejor performance
+  window.addEventListener('scroll', updateTopBarHeight, { passive: true });
 });
 
 
 
 jQuery(function($){
 
-  
 
   /*--------------------------------------------------------------
     Menu pantalla de escritorio
