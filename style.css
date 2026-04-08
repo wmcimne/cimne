@@ -1762,11 +1762,15 @@ input.et_pb_menu__search-input::placeholder {
 ----------------------------------------------------------------*/
 
 /* Banner text */
-.home-header-image p {
+.home-header-image h1 {
   color: #fff;
   text-transform: uppercase;
   top: 40vh;
 }
+
+  .banner-heading span {
+    display: block;
+  }
 
 .home-header-image .et_pb_code_inner {
   position: unset !important;
@@ -1775,26 +1779,30 @@ input.et_pb_menu__search-input::placeholder {
 /* Banner text mobile */
 @media (max-width: 768px) {
 
-  .home-header-image p {
+  
+
+  .home-header-image h1 {
     left: 0;
     line-height: 1.9rem;
     padding-bottom: 0.1rem !important;
     position: relative;
   }
 
-  .home-header-image .banner-heading-top {
+
+
+  .banner-heading .top {
     font-weight: 700;
     font-size: 1.8rem;
     letter-spacing: 1.9vw;
   }
 
-  .home-header-image .banner-heading-middle {
+  .banner-heading .middle {
     font-weight: 300;
     font-size: 1.4rem;
     letter-spacing: 1vw;
   }
 
-  .home-header-image .banner-heading-bottom {
+  .banner-heading .bottom {
     font-weight: 700;
     font-size: 1.1rem;
     letter-spacing: 1vw;
@@ -1809,27 +1817,25 @@ input.et_pb_menu__search-input::placeholder {
 /* Banner text desktop */
 @media (min-width: 769px) {
 
-  .home-header-image p {
+  .home-header-image h1 {
     line-height: 4rem;
-    /* position: absolute; */
-    /* left: 100px; */
     margin-left: 3%;
     top: 40vh;
     padding-bottom: 0.1rem !important;
     position: relative;
   }
 
-  .home-header-image .banner-heading-top {
+  .banner-heading .top {
     font-weight: 700;
     font-size: 4rem;
   }
 
-  .home-header-image .banner-heading-middle {
+  .banner-heading .middle {
     font-weight: 300;
     font-size: 3rem;
   }
 
-  .home-header-image .banner-heading-bottom {
+  .banner-heading .bottom {
     font-weight: 700;
     font-size: 2.5rem;
   }
