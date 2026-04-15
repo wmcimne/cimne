@@ -259,6 +259,10 @@ div.toggle-background:has(div.background-parent-active-grey) {
   font-size: 14px !important;
   display: inline;
 }
+/* Oculta el div .entry si contiene un h3 con la clase .not-found-title */
+[class*="et_pb_blog"] .entry:has(h3.not-found-title) {
+    display: none !important;
+}
 
 /*--------------------------------------------------------------
   Estilos slick.js
