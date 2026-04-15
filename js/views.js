@@ -530,6 +530,8 @@ const generatePublicationsHTML = ({meta, data }) => {
 //         "pages": 10
 //   }
 
+
+
     const cimneAffiliationID = '60104172'; // CIMNE affiliation ID in CrossRef
     const publicationsContainer = document.querySelector('#publications-container');
     if (!publicationsContainer) return;

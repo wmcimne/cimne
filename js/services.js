@@ -73,7 +73,7 @@ function loadPageData(pageType, params, isFilter = false) {
 const getPageType = () => {
 
     if (!apiCall) {
-        console.log('apiCall element not found');
+        //console.log('apiCall element not found');
         return { pageType: null, params: {} };
     }
 
@@ -86,7 +86,7 @@ const getPageType = () => {
         pageType = 'projects';
         const querystring = window.location.search;
         const project_id = new URLSearchParams(querystring).get('id');
-        console.log(project_id);
+        //console.log(project_id);
         if (project_id) {
             //params['id'] = params.get('id'); // Añade el ID del personal a los parámetros
             params['id'] = project_id; // Añade el ID del proyecto a los parámetros
@@ -96,7 +96,7 @@ const getPageType = () => {
         pageType = 'publications';
     } else if (apiCall.classList.contains('onate-page')) {
         pageType = 'onate';
-        params['author'] = 'onate'; // Añade el autor 'onate' a los parámetros para filtrar publicaciones
+        params['auth_scopus'] = '55147932200'; // Añade el autor 'onate' a los parámetros para filtrar publicaciones
     } else if (apiCall.classList.contains('cluster-page')) {
         pageType = 'cluster';
         clusterCode = apiCall.getAttribute('cluster-code');
@@ -182,12 +182,12 @@ document.addEventListener('click', async (event) => {
             const { pageType, params } = getPageType();
             let filterParams = { ...params, ...getFilterParams(formId) };
 
-            console.log(`Filter data clicked, formId: ${formId}, pageType: ${pageType}, filterParams: ${JSON.stringify(filterParams)}`);
+            //console.log(`Filter data clicked, formId: ${formId}, pageType: ${pageType}, filterParams: ${JSON.stringify(filterParams)}`);
 
             if (pageType) {
                 try {
                     const data = await loadPageData(pageType, filterParams, true);
-                    console.log(data);
+                    //console.log(data);
                     const filterData = await getFilterData(params);
 
                     renderFilterData(pageType, data, filterData);
@@ -225,6 +225,8 @@ document.addEventListener('click', async (event) => {
 
 const renderPageData = (pageType, data, filterData) => {
 
+    //console.log("Rendering page data. Page type:", pageType, "Data:", data, "Filter Data:", filterData);
+
     const {cluster, projects, publications, personal} = data;
 
     //console.log("personal:", personal);
@@ -246,9 +248,12 @@ const renderPageData = (pageType, data, filterData) => {
             generatePublicationsFilter();
 
             break;
+
         case 'onate':
             //console.log("Render ONATE publications data:", data);
             generatePublicationsHTML(data);
+
+            break;
     
         case 'cluster':
         case 'rtd':
@@ -307,6 +312,7 @@ const renderFilterData = (pageType, data, filterData) => {
             break;
 
         case 'publications':
+        case 'onate':
         case 'cluster':
         case 'rtd':
 
@@ -327,10 +333,10 @@ const renderFilterData = (pageType, data, filterData) => {
 
 const getFilterParams = (formId) => {
 
-    console.log(`getFilterParams: ${formId}`);
+    //console.log(`getFilterParams: ${formId}`);
 
     const selector = `#${formId} .form-group input, #${formId} .form-group select`;
-    console.log(`Selector: ${selector}`);
+    //console.log(`Selector: ${selector}`);
 
     const item = document.querySelectorAll(selector);
     const idTovalue = {
@@ -370,7 +376,7 @@ const getFilterParams = (formId) => {
         }
     });
 
-    console.log(`Form values: ${JSON.stringify(formValues)}`);
+    //console.log(`Form values: ${JSON.stringify(formValues)}`);
     return formValues;
 }
 
@@ -382,7 +388,7 @@ pageContent.addEventListener('click', event => {
         openEmailClient(getMailCimne(event.target.id));
     }
     if (event.target.classList.contains('download-ics')) {
-        console.log('Generating vCard...');
+        //console.log('Generating vCard...');
         generarVCard();
     }
 	if (event.target.classList.contains('copy-email-to-clipboard')) {
@@ -406,9 +412,9 @@ document.addEventListener('click', async (event) => {
     if (event.target.classList.contains('open-project')) {
         try {
             const wsURL = `https://metrics.cimne.com/ws/web/project?id=${event.target.id}`;
-            console.log(wsURL);
+            //console.log(wsURL);
             const data = await fetchAPI(wsURL);
-            console.log(data);
+            //console.log(data);
             generateProjectCardHTML(event.target.id, data);
         } catch (error) {
             // manejo del error
@@ -421,7 +427,7 @@ document.addEventListener('click', async (event) => {
         const projectURL = `https://cimne.com/research/projects/project-card/?id=${event.target.id}`;
         try {
             await navigator.clipboard.writeText(projectURL);
-            console.log('Contenido copiado al portapapeles');
+            //console.log('Contenido copiado al portapapeles');
             /* Resuelto - texto copiado al portapapeles con éxito */
         } catch (err) {
             console.error('Error al copiar: ', err);
@@ -431,40 +437,57 @@ document.addEventListener('click', async (event) => {
 
     // Paginación de publicaciones: botones generados por generatePublicationsHTML
     if (event.target.classList.contains('pub-page-btn')) {
+        //console.log('Publication page button clicked:', event.target.dataset.page);
         event.preventDefault();
         const page = parseInt(event.target.dataset.page, 10);
         if (isNaN(page)) return;
+        //console.log(`Loading page ${page} of publications...`);
+
+        // comprobar si hay filtros activos en la página para mantenerlos al cambiar de página
+        let filterParams = {};
+        const formInPage = document.querySelectorAll('#publications-form');
+        if (formInPage.length > 0) {
+            filterParams = {...getFilterParams('publications-form')};
+            //console.log(`Current filter params: ${JSON.stringify(filterParams)}`);
+        }
 
         // Recuperar metadatos almacenados en el contenedor de paginación
         const paginationContainer = document.getElementById('publications-pagination');
         const limit = paginationContainer && paginationContainer.dataset.limit ? parseInt(paginationContainer.dataset.limit, 10) : null;
 
         const { pageType, params } = getPageType();
-        if (pageType !== 'publications') return;
+        if (pageType !== 'publications' && pageType !== 'onate') return;
+        //console.log(`Current params: ${JSON.stringify(params)}, limit: ${limit}`);
 
-        const queryParams = { ...params };
+        const queryParams = { ...params, ...filterParams };
         if (limit) queryParams.limit = limit;
         // Calcular offset según página y limit (si no existe limit, usar page como offset)
         queryParams.offset = limit ? (page - 1) * limit : (page - 1);
 
+        //console.log(`Query params for API call: ${JSON.stringify(queryParams)}`);
+
         try {
             const data = await loadPageData(pageType, queryParams);
             const filterData = await getFilterData(params);
+            //console.log(`Filter data for page ${page}: ${JSON.stringify(filterData)}`);
+
             // Renderizar los datos recibidos
-            renderPageData(pageType, data, filterData);
+            renderFilterData(pageType, data, filterData); // Pasar el objeto filterData para la paginación
 
             // Llevar el foco/scroll al contenedor de publicaciones
             const pubContainer = document.querySelector('#publications-container');
             if (pubContainer) pubContainer.scrollIntoView({ behavior: 'smooth' });
 
-            // Actualizar la URL con el número de página (no recarga)
-            try {
-                const url = new URL(window.location.href);
-                url.searchParams.set('page', String(page));
-                window.history.replaceState({}, '', url.toString());
-            } catch (e) {
-                // Ignorar si fallan APIs de history
-            }
+            //Actualizar la URL con el número de página (no recarga)
+            // try {
+            //     const url = new URL(window.location.href);
+            //     url.searchParams.set('page', String(page));
+            //     console.log(`Updating URL to: ${url.toString()}`);
+            //     window.history.replaceState({}, '', url.toString());
+            // } catch (e) {
+            //     // Ignorar si fallan APIs de history
+            //      console.error('Error actualizando URL:', error.message);
+            // }
 
         } catch (error) {
             console.error('Error loading page:', error);
@@ -477,9 +500,9 @@ document.addEventListener('click', async (event) => {
         try {
             //const wsURL = `https://metrics.cimne.com/ws/web/persona?id=1436 `;
             const wsURL = `https://metrics.cimne.com/ws/web/persona?id=${event.target.id}`;
-            console.log(wsURL);
+            //console.log(wsURL);
             const data = await fetchAPI(wsURL);
-            console.log(data);
+            //console.log(data);
             generateDirectoryProfileHTML(data);
         } catch (error) {
             // manejo del error
@@ -489,46 +512,17 @@ document.addEventListener('click', async (event) => {
     }
 
 
-
-    // if (event.target.classList.contains('project-back')) {
-    //     const { pageType, params } = getPageType();
-
-    //     console.log(`Back button clicked, pageType: ${pageType}, params: ${JSON.stringify(params)}`);
-
-    //     if (pageType) {
-    //         try {
-    //             document.querySelector('#ongoing-projects-item').click();
-    //             const data = await loadPageData(pageType, params);
-    //             const filterData = await getFilterData(params);
-    //             console.log(data);
-    //             // Aquí puedes llamar a la función que renderiza los datos en la página
-    //             renderPageData(pageType, data, filterData);
-    //         } catch (error) {
-    //             // Error al cargar los datos de la página
-    //         }
-    //     } else {
-    //         console.log('Back button clicked, but no page type found.');
-    //         window.history.go(-1);
-    //     }
-    // }
-
-    // if (event.target.classList.contains('staff-back')) {
-        
-    //     console.log(`Staff Back button clicked`);
-    //         window.history.go(-1);
-    // }
-
     if (event.target.classList.contains('project-back')) {
         const { pageType, params } = getPageType();
 
-        console.log(`Back button clicked, pageType: ${pageType}, params: ${JSON.stringify(params)}`);
+        //console.log(`Back button clicked, pageType: ${pageType}, params: ${JSON.stringify(params)}`);
 
        
         try {
             document.querySelector('#ongoing-projects-item').click();
             const data = await loadPageData(pageType, params);
             const filterData = await getFilterData(params);
-            console.log(data);
+            //console.log(data);
             // Aquí puedes llamar a la función que renderiza los datos en la página
             renderPageData(pageType, data, filterData);
         } catch (error) {
@@ -539,7 +533,7 @@ document.addEventListener('click', async (event) => {
 
     if (event.target.classList.contains('back')) {
         
-        console.log(`Staff Back button clicked`);
+        //console.log(`Staff Back button clicked`);
             window.history.go(-1);
     }
 });
