@@ -1,22 +1,7 @@
 /*-----------------------------------------------------------------
-   Usar google sheets como endpoint json
+   Sanitización de datos para evitar inyección de HTML
 
 ------------------------------------------------------------------*/
-
-// Google sheets API
-// https://www.thebricks.com/resources/guide-how-to-use-google-sheets-as-a-json-endpoint
-// apikey: AIzaSyCM-3u1_cJCOSTvbXIa6UyqGgUj0euNdgg
-// https://sheets.googleapis.com/v4/spreadsheets/{spreadsheetId}/values/{range}?key={yourAPIKey}
-// https://sheets.googleapis.com/v4/spreadsheets/1Mr7fprXWeAbsqtoLoE6952j8TOmG30cq_vn7bKL8LLo/values/Plugins+Aulas!A1:C10?key=AIzaSyCM-3u1_cJCOSTvbXIa6UyqGgUj0euNdgg
-
-// Con el proyecto opensheet:
-// https://rodigital.io/blog/utilizar-google-sheets-como-base-de-datos
-// https://opensheet.elk.sh/1Mr7fprXWeAbsqtoLoE6952j8TOmG30cq_vn7bKL8LLo/Plugins+Aulas
-
-
-// usar alguna de estas funciones para sanitizar el HTML - Desinfectar la entrada del usuario en JavaScript
-// https://stackoverflow.com/questions/1219860/how-to-sanitize-html-using-javascript
-
 // function escapeHtml(text) {
 //   const map = {
 //     '&': '&amp;',

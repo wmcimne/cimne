@@ -1,5 +1,4 @@
 // https://sheets.googleapis.com/v4/spreadsheets/{spreadsheetId}/values/{range}?key={yourAPIKey}
-// API Call code example: <div id="gsheets-call" sheet-code="building-energy-and-environment-beegroup" rl-code="energy-communities-and-municipalities"></div>
 
 const gSheetCall = document.getElementById('gsheets-call');
 
