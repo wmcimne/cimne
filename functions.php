@@ -58,40 +58,6 @@ add_filter( 'locale_stylesheet_uri', 'chld_thm_cfg_locale_css' );
 // add_action('get_header', 'aulas_maintenance_mode');
 // END MANTENANCE MODE
 
-// /*================================================
-// #Google Tag Manager - Head
-// ================================================*/
-
-// function CIMNE_widget_website_tag_manager_head() { 
-
-//     // No cargar GA4 en admin
-//     if ( is_admin() ) {
-//         return;
-//     }
-
-
-//     // No medir páginas cuyo referrer venga del admin
-//     if ( isset($_SERVER['HTTP_REFERER']) && strpos($_SERVER['HTTP_REFERER'], '/wp-admin/') !== false ) {
-//         return;
-//     }
-
-
-//     ?>
-
-//     <!-- Google tag (gtag.js) -->
-//     <script async src="https://www.googletagmanager.com/gtag/js?id=G-04QLKB6K5K"></script>
-//     <script>
-//     window.dataLayer = window.dataLayer || [];
-//     function gtag(){dataLayer.push(arguments);}
-//     gtag('js', new Date());
-
-//     gtag('config', 'G-04QLKB6K5K');
-//     </script>
-
-
-
-//     <?php }
-// add_action('wp_head', 'CIMNE_widget_website_tag_manager_head');
 
 /*================================================
 # Google Tag Manager - CIMNE Migration
