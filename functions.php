@@ -59,41 +59,55 @@ add_filter( 'locale_stylesheet_uri', 'chld_thm_cfg_locale_css' );
 // END MANTENANCE MODE
 
 
-
 /*================================================
-#Google Tag Manager - Head
+# Google Tag Manager - CIMNE Migration
 ================================================*/
 
-function CIMNE_widget_website_tag_manager_head() { 
+/**
+ * 1. GTM en el <head>
+ */
+function CIMNE_gtm_head() { 
 
-    // No cargar GA4 en admin
+    // No cargar en el admin de WordPress
     if ( is_admin() ) {
         return;
     }
 
-
-    // No medir páginas cuyo referrer venga del admin
+    // No medir si el tráfico viene del wp-admin (mantenemos tu lógica original)
     if ( isset($_SERVER['HTTP_REFERER']) && strpos($_SERVER['HTTP_REFERER'], '/wp-admin/') !== false ) {
         return;
     }
-
-
     ?>
-
-    <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-04QLKB6K5K"></script>
-    <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
-
-    gtag('config', 'G-04QLKB6K5K');
-    </script>
-
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-P975W47S');</script>
+    <?php 
+}
+// Usamos prioridad 1 para que aparezca lo más arriba posible en el <head>
+add_action('wp_head', 'CIMNE_gtm_head', 1);
 
 
-    <?php }
-add_action('wp_head', 'CIMNE_widget_website_tag_manager_head');
+/**
+ * 2. GTM en el <body> (noscript)
+ */
+function CIMNE_gtm_body() { 
+
+    if ( is_admin() ) {
+        return;
+    }
+
+    if ( isset($_SERVER['HTTP_REFERER']) && strpos($_SERVER['HTTP_REFERER'], '/wp-admin/') !== false ) {
+        return;
+    }
+    ?>
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-P975W47S"
+    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+    <?php 
+}
+// wp_body_open es el hook estándar de WordPress para el inicio del body
+add_action('wp_body_open', 'CIMNE_gtm_body');
 
 /*====================================================
 # Imagen de cabecera aleatoria en la página de inicio
