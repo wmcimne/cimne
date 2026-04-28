@@ -59,55 +59,12 @@ add_filter( 'locale_stylesheet_uri', 'chld_thm_cfg_locale_css' );
 // END MANTENANCE MODE
 
 
+
 /*================================================
-# Google Tag Manager - CIMNE Migration
+#Google Tag Manager - Head
 ================================================*/
 
-/**
- * 1. GTM en el <head>
- */
-function CIMNE_gtm_head() { 
 
-    // No cargar en el admin de WordPress
-    if ( is_admin() ) {
-        return;
-    }
-
-    // No medir si el tráfico viene del wp-admin (mantenemos tu lógica original)
-    if ( isset($_SERVER['HTTP_REFERER']) && strpos($_SERVER['HTTP_REFERER'], '/wp-admin/') !== false ) {
-        return;
-    }
-    ?>
-    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-    })(window,document,'script','dataLayer','GTM-P975W47S');</script>
-    <?php 
-}
-// Usamos prioridad 1 para que aparezca lo más arriba posible en el <head>
-add_action('wp_head', 'CIMNE_gtm_head', 1);
-
-
-/**
- * 2. GTM en el <body> (noscript)
- */
-function CIMNE_gtm_body() { 
-
-    if ( is_admin() ) {
-        return;
-    }
-
-    if ( isset($_SERVER['HTTP_REFERER']) && strpos($_SERVER['HTTP_REFERER'], '/wp-admin/') !== false ) {
-        return;
-    }
-    ?>
-    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-P975W47S"
-    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
-    <?php 
-}
-// wp_body_open es el hook estándar de WordPress para el inicio del body
-add_action('wp_body_open', 'CIMNE_gtm_body');
 
 /*====================================================
 # Imagen de cabecera aleatoria en la página de inicio
@@ -722,7 +679,9 @@ function render_event_custom_fields_email($post_ID , $corporate_color = "#f9f9f9
     </table>";
 }
 
-function limpiar_html_divi_para_email($html,  $corporate_bg_color = "#f9f9f9") {
+function limpiar_html_divi_para_email($html,  $corporate_bg_color = "#f9f9f9", $entry_type = 'default') {
+
+  console_log("Tipo de entrada: " . $entry_type);
 
     // Procesar shortcodes y formato
     $html = apply_filters('the_content', $html);
@@ -765,15 +724,24 @@ function limpiar_html_divi_para_email($html,  $corporate_bg_color = "#f9f9f9") {
     $html = preg_replace('/<p>\s*<p>/', '<p>', $html);
     $html = preg_replace('/<\/p>\s*<\/p>/', '</p>', $html);
 
-
-    // Tipografía corporativa inline
-    $html = preg_replace('/<p>/', '<p style="font-size:14px;line-height:1.7;color:#333333;margin:0 0 20px 0;">', $html);
-    $html = preg_replace('/<h1>/', '<h1 style="font-size:26px;color:#1a1a1a;margin-bottom:20px;">', $html);
-    $html = preg_replace('/<h2>/', '<h2 style="font-size:22px;color:#1a1a1a;margin:25px 0 15px;">', $html);
-    $html = preg_replace('/<h3>/', '<h3 style="font-size:18px;color:#1a1a1a;margin:20px 0 10px;">', $html);
-    $html = preg_replace('/<h4>/', '<h4 style="font-size:16px;color:#1a1a1a;margin:20px 0 10px;">', $html);
-    $html = preg_replace('/<h5>/', '<h5 style="font-size:16px;color:#1a1a1a;margin:20px 0 10px;">', $html);
-
+    if ( strtolower( $entry_type ) === 'newsletter' ) {
+        $html = preg_replace('/<p>/', '<p style="font-size:15px;line-height:1.6;color:#222222;margin:0 0 18px 0;">', $html);
+        $html = preg_replace('/<h1>/', '<h1 style="font-size:26px;color:#0057b8;margin-bottom:22px;">', $html);
+        $html = preg_replace('/<h2>/', '<h2 style="font-size:22px;color:#fff; background-color: #0057b8; padding: 20px 0 5px 12px; ">', $html);
+        $html = preg_replace('/<h3>/', '<h3 style="font-size:14px;color:#f3921a;margin:20px 0 14px;">', $html);
+        $html = preg_replace('/<h4>/', '<h4 style="font-size:12px;color:#0057b8;margin:18px 0 12px;">', $html);
+        $html = preg_replace('/<h5>/', '<h5 style="font-size:12px;color:#0057b8;margin:16px 0 10px;">', $html);
+        $html = preg_replace('/<a/', '<a style="color:#02A0A5;"', $html);
+    } else {
+        
+        // Tipografía corporativa inline
+        $html = preg_replace('/<p>/', '<p style="font-size:14px;line-height:1.7;color:#333333;margin:0 0 20px 0;">', $html);
+        $html = preg_replace('/<h1>/', '<h1 style="font-size:26px;color:#1a1a1a;margin-bottom:20px;">', $html);
+        $html = preg_replace('/<h2>/', '<h2 style="font-size:22px;color:#1a1a1a;margin:25px 0 15px;">', $html);
+        $html = preg_replace('/<h3>/', '<h3 style="font-size:18px;color:#1a1a1a;margin:20px 0 10px;">', $html);
+        $html = preg_replace('/<h4>/', '<h4 style="font-size:16px;color:#1a1a1a;margin:20px 0 10px;">', $html);
+        $html = preg_replace('/<h5>/', '<h5 style="font-size:16px;color:#1a1a1a;margin:20px 0 10px;">', $html);
+    }
     // Imágenes optimizadas para email
     $html = preg_replace_callback(
         '/<img([^>]*?)>/i',
@@ -838,12 +806,17 @@ function pantalla_envio_email_post() {
     // Obtener tipo de evento desde la categoría hija de Events
     $categories = get_the_category($post_ID);
     $event_type = '';
+    $entry_type = '';
     
     foreach ($categories as $category) {
         // Verificar si la categoría es hija de Events (categoría padre)
         $parent = get_category($category->parent);
+        console_log("Checking category: " . $category->name . " with parent: " . ($parent ? $parent->name : 'None'));
         if ($parent && ($parent->slug === 'events' || $parent->slug === 'eventos' || $parent->slug === 'esdeveniments')) {
             $event_type = $category->name;
+            break;
+        } else if ($parent && ($parent->slug === 'preaward' )) {
+            $entry_type = $category->name;
             break;
         }
     }
@@ -977,8 +950,10 @@ function pantalla_envio_email_post() {
         $header_logo = 'https://web.cimne.upc.edu/groups/publicacions/mails/2026/plantilla/logo-color-cimne-web-sm.png';
         $header_default_style = 'color: #0057b8;';
         $event_fields_html = '';
-
-
+        $header_title = strtolower($entry_type) === 'newsletter' ? $post->post_title : $strings['nota_de_prensa'] ;
+        $post_title = strtolower($entry_type) === 'newsletter' ? '' : $post->post_title ;
+        
+         
         $header_htlm = "
                     <!-- HEADER IMAGE -->
                     <tr>
@@ -1002,8 +977,8 @@ function pantalla_envio_email_post() {
                                              style='display:block;max-width:100%;height:auto;' />
                                     </td>
                                     <td width='20'></td>
-                                    <td valign='top' style='font-size:28px; font-weight:bold; color: #000; line-height:1.3; border-bottom: 2px solid #000; padding-bottom:5px;'>
-                                        {$strings['nota_de_prensa']}
+                                    <td valign='top' style='font-size:24px; font-weight:bold; color: #000; line-height:1.3; border-bottom: 2px solid #000; padding-bottom:5px;'>
+                                        {$header_title}
                                     </td>
                                 </tr>
                             </table>
@@ -1012,7 +987,7 @@ function pantalla_envio_email_post() {
                     <tr>
                         <td class='title' style='font-size:28px; font-weight:bold; color: {$corporate_color};
                                    margin-bottom:20px; line-height:1.3;'>
-                            {$post->post_title}
+                            {$post_title}
                         </td>
                     </tr>
                     <tr height='10'>
@@ -1022,7 +997,7 @@ function pantalla_envio_email_post() {
     }
 
     // Sanitizar Divi → HTML email friendly
-    $contenido_html = limpiar_html_divi_para_email($post->post_content, $corporate_bg_color);
+    $contenido_html = limpiar_html_divi_para_email($post->post_content, $corporate_bg_color, $entry_type);
 
     // URL del post (para el botón)
     $url_post = get_permalink($post_ID);
