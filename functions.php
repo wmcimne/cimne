@@ -60,9 +60,66 @@ add_filter( 'locale_stylesheet_uri', 'chld_thm_cfg_locale_css' );
 
 
 
-/*================================================
-#Google Tag Manager - Head
-================================================*/
+
+/**
+ * Google Consent Mode v2 manual para Complianz Free + GTM
+ * CIMNE: solo analítica, sin publicidad ni marketing.
+ */
+
+add_action('wp_head', function () {
+    if (is_admin()) {
+        return;
+    }
+    ?>
+    <script>
+    window.dataLayer = window.dataLayer || [];
+
+    function gtag() {
+      window.dataLayer.push(arguments);
+    }
+
+    function cmplzCookieIsAllowed(cookieName) {
+      return document.cookie
+        .split('; ')
+        .some(function(cookie) {
+          return cookie.indexOf(cookieName + '=allow') === 0;
+        });
+    }
+
+    function updateGoogleConsentFromComplianz() {
+      var statisticsAllowed = cmplzCookieIsAllowed('cmplz_statistics');
+
+      gtag('consent', 'update', {
+        'analytics_storage': statisticsAllowed ? 'granted' : 'denied',
+        'ad_storage': 'denied',
+        'ad_user_data': 'denied',
+        'ad_personalization': 'denied',
+        'functionality_storage': 'granted',
+        'security_storage': 'granted'
+      });
+    }
+
+    gtag('consent', 'default', {
+      'analytics_storage': cmplzCookieIsAllowed('cmplz_statistics') ? 'granted' : 'denied',
+      'ad_storage': 'denied',
+      'ad_user_data': 'denied',
+      'ad_personalization': 'denied',
+      'functionality_storage': 'granted',
+      'security_storage': 'granted',
+      'wait_for_update': 500
+    });
+
+    document.addEventListener('cmplz_event_statistics', updateGoogleConsentFromComplianz);
+    document.addEventListener('cmplz_event_all', updateGoogleConsentFromComplianz);
+    document.addEventListener('cmplz_status_change', updateGoogleConsentFromComplianz);
+
+    window.addEventListener('load', updateGoogleConsentFromComplianz);
+
+    setTimeout(updateGoogleConsentFromComplianz, 1000);
+    setTimeout(updateGoogleConsentFromComplianz, 3000);
+    </script>
+    <?php
+}, 0);
 
 
 
@@ -617,7 +674,7 @@ function render_event_custom_fields_email($post_ID , $corporate_color = "#f9f9f9
                 <td style='width: 10%; text-align:center; padding:5px 15px;'>
                     <img src='https://web.cimne.upc.edu/groups/publicacions/mails/img/icons/icon_calendar{$icon_color}.png' alt='Date' style='width:22px;height:22px;vertical-align: bottom;'/>
                 </td>
-                <td style='padding:5px 15px;font-size:16px;color:#333333;font-weight:bold;'>
+                <td style='padding:5px 15px;font-size:14px;color:#333333;font-weight:bold;'>
                     {$formatted_date}
                 </td>
             </tr>
@@ -625,7 +682,7 @@ function render_event_custom_fields_email($post_ID , $corporate_color = "#f9f9f9
                 <td style='width: 10%; text-align:center; padding:5px 15px;'>
                     <img src='https://web.cimne.upc.edu/groups/publicacions/mails/img/icons/icon_clock{$icon_color}.png' alt='Time' style='width:22px;height:22px;vertical-align: bottom;'/>
                 </td>
-                <td style='padding:5px 15px;font-size:16px;color:#333333;font-weight:bold;'>
+                <td style='padding:5px 15px;font-size:14px;color:#333333;font-weight:bold;'>
                     {$time}
                 </td>
             </tr>
@@ -633,7 +690,7 @@ function render_event_custom_fields_email($post_ID , $corporate_color = "#f9f9f9
                 <td style='width: 10%; text-align:center; padding:5px 15px;'>
                     <img src='https://web.cimne.upc.edu/groups/publicacions/mails/img/icons/icon_pin_alt{$icon_color}.png' alt='Place' style='width:22px;height:22px;vertical-align: bottom;'/>
                 </td>
-                <td style='padding:5px 15px;font-size:16px;color:#333333;font-weight:bold;'>
+                <td style='padding:5px 15px;font-size:14px;color:#333333;font-weight:bold;'>
                     {$place}
                 </td>
             </tr>";
@@ -643,7 +700,7 @@ function render_event_custom_fields_email($post_ID , $corporate_color = "#f9f9f9
                 <td style='width: 10%; text-align:center; padding:5px 15px;'>
                     <img src='https://web.cimne.upc.edu/groups/publicacions/mails/img/icons/icon_laptop{$icon_color}.png' alt='Online streaming' style='width:22px;height:22px;vertical-align: bottom;'/>
                 </td>
-                <td style='padding:5px 15px;font-size:16px;color:#333333;font-weight:bold;'>
+                <td style='padding:5px 15px;font-size:14px;color:#333333;font-weight:bold;'>
                     <a href='" . esc_url($online_streaming) . "' target='_blank'
                        style='color:#0057b8;text-decoration:none;font-weight:bold;'>
                        {$fields['online_streaming']}
@@ -657,7 +714,7 @@ function render_event_custom_fields_email($post_ID , $corporate_color = "#f9f9f9
                 <td style='width: 10%; text-align:center; padding:5px 15px;'>
                     <img src='https://web.cimne.upc.edu/groups/publicacions/mails/img/icons/icon_pencil-edit{$icon_color}.png' alt='Registration' style='width:22px;height:22px;vertical-align: bottom;'/>
                 </td>
-                <td style='padding:5px 15px;font-size:16px;color:#333333;font-weight:bold;'>
+                <td style='padding:5px 15px;font-size:14px;color:#333333;font-weight:bold;'>
                     <a href='" . esc_url($registration) . "' target='_blank'
                        style='color:#0057b8;text-decoration:none;font-weight:bold;'>
                        {$fields['registration']}
@@ -678,6 +735,27 @@ function render_event_custom_fields_email($post_ID , $corporate_color = "#f9f9f9
         {$rows}
     </table>";
 }
+
+function render_boton_corporativo_email($url, $text, $corporate_color = "#f9f9f9") {
+    return "
+    <p style='text-align:center; margin:30px 0;'>
+        <a href='" . esc_url($url) . "' target='_blank' style='display:inline-block; padding:12px 25px; background-color: {$corporate_color}; color:#fff; text-decoration:none; font-weight:bold; border-radius:4px;'>
+            {$text}
+        </a>
+    </p>";
+}
+
+function previous_editions_field_email($post_ID) {
+    $previous_editions = get_post_meta($post_ID, 'previous_editions', true);
+    console_log("Previous editions meta value: " . $previous_editions);
+    if ( !empty($previous_editions) ) {
+        // return "<p style='font-size:14px;line-height:1.7;color:#333333;margin:0 0 20px 0; width:100%;'>{$previous_editions }</p>";
+        return $previous_editions;
+    }
+    return '';
+}
+
+
 
 function limpiar_html_divi_para_email($html,  $corporate_bg_color = "#f9f9f9", $entry_type = 'default') {
 
@@ -725,12 +803,12 @@ function limpiar_html_divi_para_email($html,  $corporate_bg_color = "#f9f9f9", $
     $html = preg_replace('/<\/p>\s*<\/p>/', '</p>', $html);
 
     if ( strtolower( $entry_type ) === 'newsletter' ) {
-        $html = preg_replace('/<p>/', '<p style="font-size:15px;line-height:1.6;color:#222222;margin:0 0 18px 0;">', $html);
+        $html = preg_replace('/<p>/', '<p style="font-size:14px;line-height:1.6;color:#222222;margin:0 0 18px 0;">', $html);
         $html = preg_replace('/<h1>/', '<h1 style="font-size:26px;color:#0057b8;margin-bottom:22px;">', $html);
         $html = preg_replace('/<h2>/', '<h2 style="font-size:22px;color:#fff; background-color: #0057b8; padding: 20px 0 5px 12px; ">', $html);
-        $html = preg_replace('/<h3>/', '<h3 style="font-size:14px;color:#f3921a;margin:20px 0 14px;">', $html);
-        $html = preg_replace('/<h4>/', '<h4 style="font-size:12px;color:#0057b8;margin:18px 0 12px;">', $html);
-        $html = preg_replace('/<h5>/', '<h5 style="font-size:12px;color:#0057b8;margin:16px 0 10px;">', $html);
+        $html = preg_replace('/<h3>/', '<h3 style="font-size:18px;color:#f3921a;margin:20px 0 14px;">', $html);
+        $html = preg_replace('/<h4>/', '<h4 style="font-size:16px;color:#0057b8;margin:18px 0 12px;">', $html);
+        $html = preg_replace('/<h5>/', '<h5 style="font-size:16px;color:#0057b8;margin:16px 0 10px;">', $html);
         $html = preg_replace('/<a/', '<a style="color:#02A0A5;"', $html);
     } else {
         
@@ -908,40 +986,57 @@ function pantalla_envio_email_post() {
                 $header_image = 'https://web.cimne.upc.edu/groups/publicacions/mails/2026/plantilla/banner_default.jpg';
         }
 
-        $header_htlm = "
+        $header_htlm = '
                     <!-- HEADER IMAGE -->
                     <tr>
-                        <td class='title' style='font-size:28px; font-weight:bold;
-                                   margin-bottom:20px; line-height:1.3;'>
-                                   <div class='contenedor-imagen' style='position: relative; display: inline-block; overflow: hidden;'>
-                                        <img src='{$header_image}' style='display:block;width:100%;height:auto;' />
-                                        <div class='texto-superpuesto' style='position: absolute; top: 30%; padding: 15px;'>
-                                            <h1 style='margin:0;font-size:24px;line-height: 1;'>{$post->post_title}</h1>
+                        <td class="title" style="font-size:28px; font-weight:bold;
+                                   margin-bottom:20px; line-height:1.3;">
+                                   <div class="contenedor-imagen" style="position: relative; display: inline-block; overflow: hidden;">
+                                        <img src="'.$header_image.'" style="display:block;width:100%;height:auto;" />
+                                        <div class="texto-superpuesto" style="position: absolute; top: 30%; padding: 15px;">
+                                            <h1 style="margin:0;font-size:24px;line-height: 1;">'.$post->post_title.'</h1>
                                         </div>
                                     </div>
 
-                            <!--<img width='600' height='auto' src='{$header_image}' 
-                                 style='display:block;margin-bottom:30px;
-                                        max-width:100%;height:auto;' />-->
+                            <!--<img width="600" height="auto" src="{$header_image}" 
+                                 style="display:block;margin-bottom:30px;
+                                        max-width:100%;height:auto;" />-->
                         </td>
                     </tr>
                     
 
                     <!-- TÍTULO -->
                     <!--<tr>
-                        <td class='title' style='font-size:28px; font-weight:bold; color: {$corporate_color};
-                                   margin-bottom:20px; line-height:1.3;'>
-                            {$post->post_title}
+                        <td class="title" style="font-size:28px; font-weight:bold; color: '.$corporate_color.';
+                                   margin-bottom:20px; line-height:1.3;">
+                            '.$post->post_title.'
                         </td>
 
                     </tr>
-                    <tr height='10'>
+                    <tr height="10">
                         <td><br/></td>
                     </tr>-->
-                    ";
+                    ';
 
         // Campos personalizados del evento
         $event_fields_html = render_event_custom_fields_email($post_ID, $corporate_color);  
+
+        $boton_corporativo = '
+            <table align="center" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                    <td align="center"
+                        style="border: 2px solid'. $corporate_color . ' ;">
+                        <a href="'.$url_post.'" target="_blank"
+                            style="display:inline-block;padding:15px 32px;
+                                    font-size:17px;color:'.$corporate_color.';
+                                    text-decoration:none;font-weight:bold;
+                                    font-family:Arial,sans-serif;">
+                            '. $strings["button"] .'
+                        </a>
+                    </td>
+                </tr>
+            </table>';
+            
 
     } else {
         $corporate_color = "#0057b8";// Color corporativo CIMNE
@@ -952,48 +1047,68 @@ function pantalla_envio_email_post() {
         $event_fields_html = '';
         $header_title = strtolower($entry_type) === 'newsletter' ? $post->post_title : $strings['nota_de_prensa'] ;
         $post_title = strtolower($entry_type) === 'newsletter' ? '' : $post->post_title ;
+        $previous_editions_field_html = '';
+
+
+        //$previous_editions_field_html = previous_editions_field_email($post_ID);
+        $previous_editions_field_html = limpiar_html_divi_para_email(get_post_meta($post_ID, 'previous_editions', true), $corporate_bg_color, $entry_type);
+        
+       
+        console_log("Previous editions Field: " . $previous_editions_field);
+        console_log("Previous editions Field HTML: " . $previous_editions_field_html);
         
          
-        $header_htlm = "
+        $header_htlm = '
                     <!-- HEADER IMAGE -->
                     <tr>
-                        <td class='title' style='font-size:28px; font-weight:bold;
-                                   margin-bottom:20px; line-height:1.3;'>
+                        <td class="title" style="font-size:28px; font-weight:bold;
+                                   margin-bottom:20px; line-height:1.3;">
 
-                            <img width='600' height='auto' src='{$header_image}' 
-                                 style='display:block;margin-bottom:30px;
-                                        max-width:100%;height:auto;' />
+                            <img width="600" height="auto" src="'.$header_image.'" 
+                                 style="display:block;margin-bottom:30px;
+                                        max-width:100%;height:auto;" />
                         </td>
                     </tr>
                     
 
                     <!-- TÍTULO -->
                     <tr>
-                        <td style='padding-bottom:20px;'>
-                            <table width='100%' cellpadding='0' cellspacing='0' border='0'>
+                        <td style="padding-bottom:20px;">
+                            <table width="100%" cellpadding="0" cellspacing="0" border="0">
                                 <tr>
-                                    <td width='180' valign='top'>
-                                        <img width='180' height='auto' src='{$header_logo}' 
-                                             style='display:block;max-width:100%;height:auto;' />
+                                    <td width="180" valign="top">
+                                        <img width="180" height="auto" src="'.$header_logo.'" 
+                                             style="display:block;max-width:100%;height:auto;" />
                                     </td>
-                                    <td width='20'></td>
-                                    <td valign='top' style='font-size:24px; font-weight:bold; color: #000; line-height:1.3; border-bottom: 2px solid #000; padding-bottom:5px;'>
-                                        {$header_title}
+                                    <td width="20"></td>
+                                    <td valign="top" style="font-size:24px; font-weight:bold; color: #000; line-height:1.3; border-bottom: 2px solid #000; padding-bottom:5px;">
+                                        '. $header_title .'
                                     </td>
                                 </tr>
                             </table>
                         </td>
                     </tr>
                     <tr>
-                        <td class='title' style='font-size:28px; font-weight:bold; color: {$corporate_color};
-                                   margin-bottom:20px; line-height:1.3;'>
-                            {$post_title}
+                        <td class="title" style="font-size:28px; font-weight:bold; color: '. $corporate_color .';
+                                   margin-bottom:20px; line-height:1.3;">
+                            '. $post_title .'
                         </td>
                     </tr>
-                    <tr height='10'>
+                    <tr height="10">
                         <td><br/></td>
                     </tr>
-                    ";
+                    ';
+        $boton_corporativo =  strtolower($entry_type) === 'newsletter' ?
+          ' 
+            <table cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                    <td style="border: 2px solid #f3921a ; background-color: #f3921a26; padding: 10px 20px; ">
+                        ' . $previous_editions_field_html . '
+                        
+                    </td>
+                </tr>
+            </table>' : 
+            '';
     }
 
     // Sanitizar Divi → HTML email friendly
@@ -1055,7 +1170,7 @@ function pantalla_envio_email_post() {
 
                     <!-- CONTENIDO LIMPIO -->
                     <tr>
-                        <td style='font-size:16px;line-height:1.7;color:#333333;padding-bottom:35px;'>
+                        <td style='font-size:14px;line-height:1.7;color:#333333;padding-bottom:35px;'>
                             {$contenido_html}
                         </td>
                     </tr>
@@ -1063,20 +1178,7 @@ function pantalla_envio_email_post() {
                     <!-- BOTÓN CORPORATIVO -->
                     <tr>
                         <td align='center' style='padding-bottom:40px;'>
-                            <table cellpadding='0' cellspacing='0' border='0'>
-                                <tr>
-                                    <td align='center'
-                                        style='border: 2px solid {$corporate_color};'>
-                                        <a href='{$url_post}' target='_blank'
-                                           style='display:inline-block;padding:15px 32px;
-                                                  font-size:17px;color:{$corporate_color};
-                                                  text-decoration:none;font-weight:bold;
-                                                  font-family:Arial,sans-serif;'>
-                                            {$strings['button']}
-                                        </a>
-                                    </td>
-                                </tr>
-                            </table>
+                            {$boton_corporativo}
                         </td>
                     </tr>
                     </table>
