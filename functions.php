@@ -60,10 +60,10 @@ add_filter( 'locale_stylesheet_uri', 'chld_thm_cfg_locale_css' );
 
 
 
-
 /**
- * Google Consent Mode v2 manual para Complianz Free + GTM
- * CIMNE: solo analítica, sin publicidad ni marketing.
+ * Google Consent Mode v2 manual para Complianz Free
+ * Adaptado para activar señales de marketing si el usuario acepta, 
+ * solucionando el aviso de "Señales inactivas" en GA4.
  */
 
 add_action('wp_head', function () {
@@ -78,6 +78,7 @@ add_action('wp_head', function () {
       window.dataLayer.push(arguments);
     }
 
+    // Función para leer las cookies de Complianz
     function cmplzCookieIsAllowed(cookieName) {
       return document.cookie
         .split('; ')
@@ -88,33 +89,61 @@ add_action('wp_head', function () {
 
     function updateGoogleConsentFromComplianz() {
       var statisticsAllowed = cmplzCookieIsAllowed('cmplz_statistics');
+      console.log('Updating Google Consent statistics...' + statisticsAllowed);
+      console.log('Statistics consent: ' + (statisticsAllowed ? 'granted' : 'denied'));
+      var marketingAllowed = cmplzCookieIsAllowed('cmplz_marketing');
+      console.log('Updating Google Consent marketing...' + marketingAllowed);
+      console.log('Marketing consent: ' + (marketingAllowed ? 'granted' : 'denied'));
 
       gtag('consent', 'update', {
         'analytics_storage': statisticsAllowed ? 'granted' : 'denied',
-        'ad_storage': 'denied',
-        'ad_user_data': 'denied',
-        'ad_personalization': 'denied',
+        'ad_storage': marketingAllowed ? 'granted' : 'denied',
+        'ad_user_data': marketingAllowed ? 'granted' : 'denied',
+        'ad_personalization': marketingAllowed ? 'granted' : 'denied',
         'functionality_storage': 'granted',
         'security_storage': 'granted'
       });
+
+    //   gtag('consent', 'update', {
+    //     'analytics_storage': statisticsAllowed ? 'granted' : 'denied',
+    //     'ad_storage': 'denied',
+    //     'ad_user_data': 'denied',
+    //     'ad_personalization': 'denied',
+    //     'functionality_storage': 'granted',
+    //     'security_storage': 'granted'
+    //   });
     }
 
+    // Estado por defecto (Default)
+    // gtag('consent', 'default', {
+    //   'analytics_storage': cmplzCookieIsAllowed('cmplz_statistics') ? 'granted' : 'denied',
+    //   'ad_storage': cmplzCookieIsAllowed('cmplz_marketing') ? 'granted' : 'denied',
+    //   'ad_user_data': cmplzCookieIsAllowed('cmplz_marketing') ? 'granted' : 'denied',
+    //   'ad_personalization': cmplzCookieIsAllowed('cmplz_marketing') ? 'granted' : 'denied',
+    //   'functionality_storage': 'granted',
+    //   'security_storage': 'granted',
+    //   'wait_for_update': 500
+    // });
+
+    // Estado por defecto (Default) - Forzamos 'denied' siempre al arrancar
     gtag('consent', 'default', {
-      'analytics_storage': cmplzCookieIsAllowed('cmplz_statistics') ? 'granted' : 'denied',
-      'ad_storage': 'denied',
-      'ad_user_data': 'denied',
-      'ad_personalization': 'denied',
-      'functionality_storage': 'granted',
-      'security_storage': 'granted',
-      'wait_for_update': 500
+    'analytics_storage': 'denied',
+    'ad_storage': 'denied',
+    'ad_user_data': 'denied',
+    'ad_personalization': 'denied',
+    'functionality_storage': 'granted',
+    'security_storage': 'granted',
+    'wait_for_update': 500
     });
 
+    // Escuchar eventos de Complianz
     document.addEventListener('cmplz_event_statistics', updateGoogleConsentFromComplianz);
+    document.addEventListener('cmplz_event_marketing', updateGoogleConsentFromComplianz);
     document.addEventListener('cmplz_event_all', updateGoogleConsentFromComplianz);
     document.addEventListener('cmplz_status_change', updateGoogleConsentFromComplianz);
 
+    // Re-verificación por carga o retraso
     window.addEventListener('load', updateGoogleConsentFromComplianz);
-
     setTimeout(updateGoogleConsentFromComplianz, 1000);
     setTimeout(updateGoogleConsentFromComplianz, 3000);
     </script>
@@ -580,869 +609,753 @@ add_filter('et_builder_blog_query', 'custom_blog_filter_and_order', 10, 2);
 // add_action( 'the_post', 'auto_featured_image' );
 
 
-
 /*=====================================================================================
-#Crear archivo HTML con formato email
-#Abre un lienzo con opciones para enviar por email
-#Opciones para abrir cliente de email y copiar al portapapeles el codigo HTML
-#Incluye imagen destacada si existe
-#Usa estilos inline y estructura en tablas para compatibilidad con clientes de email
+# Crear archivo HTML con formato email
+# Abre un lienzo con opciones para enviar por email
+# Opciones para abrir cliente de email y copiar al portapapeles el codigo HTML
+# Incluye imagen destacada si existe
+# Usa estilos inline y estructura en tablas para compatibilidad con clientes de email
 ======================================================================================*/
-function render_event_custom_fields_email($post_ID , $corporate_color = "#f9f9f9") {
 
-    // language detection
-    $url_lang = isset($_GET['lang']) ? sanitize_text_field($_GET['lang']) : null;
-    if ($url_lang) {
-        $locale = $url_lang;
-    } else {   
-        $locale = 'en';
+/* ============================================================
+ * Helpers
+ * ============================================================ */
+
+function cimne_email_log($message) {
+    if (defined('WP_DEBUG') && WP_DEBUG) {
+        error_log('[CIMNE Email] ' . $message);
     }
-    
-    // Definir etiquetas según idioma
-    if ( strpos( $locale, 'es' ) === 0 ) {
-        $fields = [
-            //'type_of_event'    => 'Tipo de evento',
-            'date'             => 'Fecha',
-            'time'             => 'Hora',
-            'place'            => 'Lugar',
-            'online_streaming' => 'Transmisión en línea',
-            'registration'     => 'Registro'
-        ];
-		$days_of_week = [ 'Domingo'  , 'Lunes'    , 'Martes'   , 'Miércoles', 'Jueves'  , 'Viernes'  , 'Sábado'];
-		$month_of_year = [ 'Enero'    , 'Febrero'  , 'Marzo'    , 'Abril'    , 'Mayo'    , 'Junio'    , 'Julio'   , 'Agosto'   , 'Septiembre', 'Octubre' , 'Noviembre', 'Diciembre'];
+}
 
-    } elseif ( strpos( $locale, 'ca' ) === 0 ) {
-        $fields = [
-            //'type_of_event'    => 'Tipus d\'event',
-            'date'             => 'Data',
-            'time'             => 'Hora',
-            'place'            => 'Lloc',
-            'online_streaming' => 'Transmissió en línia',
-            'registration'     => 'Registre'
-        ];
-		$days_of_week = ['Diumenge', 'Dilluns', 'Dimarts', 'Dimecres', 'Dijous', 'Divendres', 'Dissabte'];
-		$month_of_year = [ 'Gener'    , 'Febrer'   , 'Març'     , 'Abril'    , 'Maig'    , 'Juny'     , 'Juliol'  , 'Agost'    , 'Setembre'  , 'Octubre' , 'Novembre' , 'Desembre'];
+function cimne_get_request_lang() {
+    return isset($_GET['lang']) ? sanitize_text_field(wp_unslash($_GET['lang'])) : 'en';
+}
 
-    } else {
-        // English (default)
-        $fields = [
-            //'type_of_event'    => 'Type of event',
-            'date'             => 'Date',
-            'time'             => 'Time',
-            'place'            => 'Place',
+function cimne_get_email_strings($locale) {
+    if (strpos($locale, 'es') === 0) {
+        return [
+            'button' => 'Leer más',
+            'cannot_read' => 'Si no puedes leer este correo, haz clic',
+            'here' => 'aquí',
+            'press_release' => 'Nota de prensa',
+            'send_email' => 'Send Email',
+        ];
+    }
+
+    if (strpos($locale, 'ca') === 0) {
+        return [
+            'button' => 'Llegir més',
+            'cannot_read' => 'Si no pots llegir aquest correu, fes clic',
+            'here' => 'aquí',
+            'press_release' => 'Nota de premsa',
+            'send_email' => 'Send Email',
+        ];
+    }
+
+    return [
+        'button' => 'Read more',
+        'cannot_read' => 'If you cannot read this email, click',
+        'here' => 'here',
+        'press_release' => 'Press release',
+        'send_email' => 'Send Email',
+    ];
+}
+
+function cimne_get_event_labels($locale) {
+    if (strpos($locale, 'es') === 0) {
+        return [
+            'fields' => [
+                'date' => 'Fecha',
+                'time' => 'Hora',
+                'place' => 'Lugar',
+                'online_streaming' => 'Transmisión en línea',
+                'registration' => 'Registro',
+            ],
+            'days' => ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'],
+            'months' => ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'],
+        ];
+    }
+
+    if (strpos($locale, 'ca') === 0) {
+        return [
+            'fields' => [
+                'date' => 'Data',
+                'time' => 'Hora',
+                'place' => 'Lloc',
+                'online_streaming' => 'Transmissió en línia',
+                'registration' => 'Registre',
+            ],
+            'days' => ['Diumenge', 'Dilluns', 'Dimarts', 'Dimecres', 'Dijous', 'Divendres', 'Dissabte'],
+            'months' => ['Gener', 'Febrer', 'Març', 'Abril', 'Maig', 'Juny', 'Juliol', 'Agost', 'Setembre', 'Octubre', 'Novembre', 'Desembre'],
+        ];
+    }
+
+    return [
+        'fields' => [
+            'date' => 'Date',
+            'time' => 'Time',
+            'place' => 'Place',
             'online_streaming' => 'Online streaming',
-            'registration'     => 'Registration'
-        ];
-		$days_of_week = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-		$month_of_year = [ 'January'  , 'February' , 'March'    , 'April'    , 'May'     , 'June'     , 'July'    , 'August'   , 'September' , 'October' , 'November' , 'December'];
+            'registration' => 'Registration',
+        ],
+        'days' => ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
+        'months' => ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
+    ];
+}
 
+function cimne_sanitize_email_color($color, $fallback = '#0057b8') {
+    $color = sanitize_hex_color($color);
+    return $color ?: $fallback;
+}
+
+function cimne_get_icon_color($corporate_color) {
+    return preg_replace('/[^a-fA-F0-9]/', '', str_replace('#', '', $corporate_color));
+}
+
+/* ============================================================
+ * Tipo de entrada / evento
+ * ============================================================ */
+
+function cimne_get_post_types_for_email($post_ID) {
+    $categories = get_the_category($post_ID);
+
+    $event_type = '';
+    $entry_type = '';
+
+    foreach ($categories as $category) {
+        $parent = $category->parent ? get_category($category->parent) : null;
+
+        if ($parent && in_array($parent->slug, ['events', 'eventos', 'esdeveniments'], true)) {
+            $event_type = $category->name;
+            break;
+        }
+
+        if (!$entry_type) {
+            $entry_type = $category->name;
+        }
     }
 
-    $rows = '';
-	
-    
-    
+    return [
+        'event_type' => $event_type,
+        'entry_type' => $entry_type,
+    ];
+}
+
+function cimne_get_email_theme($event_type, $entry_type) {
+    $type_key = strtolower(trim($event_type ?: $entry_type));
+
+    $theme = [
+        'corporate_color' => '#0057b8',
+        'corporate_bg_color' => '#d9e8f8',
+        'header_image' => 'https://web.cimne.upc.edu/groups/publicacions/mails/2026/plantilla/banner_default.jpg',
+    ];
+
+    switch ($type_key) {
+        case 'coffee talk':
+        case 'internal coffee talks':
+            $theme['corporate_color'] = '#02a0a5';
+            $theme['corporate_bg_color'] = '#d9f2f3';
+            $theme['header_image'] = 'https://web.cimne.upc.edu/groups/publicacions/mails/2026/plantilla/banner_coffee_talks_md.jpg';
+            break;
+
+        case 'seminars':
+        case 'seminaris':
+        case 'seminarios':
+            $theme['corporate_color'] = '#f3921a';
+            $theme['corporate_bg_color'] = '#fdebd1';
+            $theme['header_image'] = 'https://web.cimne.upc.edu/groups/publicacions/mails/2026/plantilla/banner_seminars_md.jpg';
+            break;
+
+        case 'thesis defense':
+        case 'defensa de tesi':
+        case 'defensa de tesis':
+            $theme['corporate_color'] = '#004996';
+            $theme['corporate_bg_color'] = '#d9e4f2';
+            $theme['header_image'] = 'https://web.cimne.upc.edu/groups/publicacions/mails/2026/plantilla/banner_tesis_md_rec.jpg';
+            break;
+
+        case 'congress':
+        case 'congrés':
+        case 'congreso':
+            $theme['corporate_bg_color'] = '#F8E7DF';
+            break;
+    }
+
+    $theme['corporate_color'] = cimne_sanitize_email_color($theme['corporate_color']);
+
+    return $theme;
+}
+
+/* ============================================================
+ * Campos de evento
+ * ============================================================ */
+
+function cimne_format_event_date($post_ID, $locale) {
+    $labels = cimne_get_event_labels($locale);
+
     $date = get_post_meta($post_ID, 'date', true);
-    $date_obj = DateTime::createFromFormat("Ymd", $date);
+    $date_obj = DateTime::createFromFormat('Ymd', $date);
 
-    if ( $date_obj ) {
-        // Use the DateTime created from the post meta so we don't show the current date
-        $day_index = (int) $date_obj->format('w');
-        $day_name = $days_of_week[$day_index];
-        $day_number = $date_obj->format('d');
-        $month_number = (int) $date_obj->format('n');
-        $month_name = $month_of_year[$month_number - 1];
-        $year = $date_obj->format('Y');
-        $formatted_date = "{$day_name}, {$day_number} {$month_name} {$year}";
-        // also set a human readable $date string (kept for compatibility)
-        $date = $date_obj->format("d M Y");
-    } else {
-        // Fallback: keep whatever value was stored (could be empty or already formatted)
-        $formatted_date = $date;
-        console_log("Final formatted date (no valid meta): " . $formatted_date);
+    if (!$date_obj) {
+        return esc_html($date);
     }
+
+    $day_name = $labels['days'][(int) $date_obj->format('w')];
+    $day_number = $date_obj->format('d');
+    $month_name = $labels['months'][(int) $date_obj->format('n') - 1];
+    $year = $date_obj->format('Y');
+
+    return esc_html("{$day_name}, {$day_number} {$month_name} {$year}");
+}
+
+function cimne_render_event_row($icon, $alt, $content, $corporate_color) {
+    $icon_color = cimne_get_icon_color($corporate_color);
+    $icon_url = esc_url("https://web.cimne.upc.edu/groups/publicacions/mails/img/icons/{$icon}{$icon_color}.png");
+
+    return "
+        <tr>
+            <td style='width:10%;text-align:center;padding:5px 15px;'>
+                <img src='{$icon_url}' alt='" . esc_attr($alt) . "' style='width:22px;height:22px;vertical-align:bottom;' />
+            </td>
+            <td style='padding:5px 15px;font-size:14px;color:#333333;font-weight:bold;'>
+                {$content}
+            </td>
+        </tr>";
+}
+
+function cimne_render_event_custom_fields_email($post_ID, $locale, $corporate_color = '#0057b8') {
+    $labels = cimne_get_event_labels($locale);
+    $fields = $labels['fields'];
+
+    $formatted_date = cimne_format_event_date($post_ID, $locale);
+
     $time = esc_html(get_post_meta($post_ID, 'time', true));
-    $time = preg_replace('/:\d{2}$/', '', $time); // Remove seconds if present
+    $time = preg_replace('/:\d{2}$/', '', $time);
+
     $place = esc_html(get_post_meta($post_ID, 'place', true));
-    //$attendance = esc_html(get_post_meta($post_ID, 'attendance', true));
     $online_streaming = get_post_meta($post_ID, 'online_streaming', true);
     $registration = get_post_meta($post_ID, 'registration', true);
-    $icon_color = str_replace('#', '', $corporate_color);
 
-    $rows .= "
-            <tr>
-                <td style='width: 10%; text-align:center; padding:5px 15px;'>
-                    <img src='https://web.cimne.upc.edu/groups/publicacions/mails/img/icons/icon_calendar{$icon_color}.png' alt='Date' style='width:22px;height:22px;vertical-align: bottom;'/>
-                </td>
-                <td style='padding:5px 15px;font-size:14px;color:#333333;font-weight:bold;'>
-                    {$formatted_date}
-                </td>
-            </tr>
-            <tr>
-                <td style='width: 10%; text-align:center; padding:5px 15px;'>
-                    <img src='https://web.cimne.upc.edu/groups/publicacions/mails/img/icons/icon_clock{$icon_color}.png' alt='Time' style='width:22px;height:22px;vertical-align: bottom;'/>
-                </td>
-                <td style='padding:5px 15px;font-size:14px;color:#333333;font-weight:bold;'>
-                    {$time}
-                </td>
-            </tr>
-            <tr>
-                <td style='width: 10%; text-align:center; padding:5px 15px;'>
-                    <img src='https://web.cimne.upc.edu/groups/publicacions/mails/img/icons/icon_pin_alt{$icon_color}.png' alt='Place' style='width:22px;height:22px;vertical-align: bottom;'/>
-                </td>
-                <td style='padding:5px 15px;font-size:14px;color:#333333;font-weight:bold;'>
-                    {$place}
-                </td>
-            </tr>";
+    $rows = '';
+
+    if ($formatted_date) {
+        $rows .= cimne_render_event_row('icon_calendar', 'Date', $formatted_date, $corporate_color);
+    }
+
+    if ($time) {
+        $rows .= cimne_render_event_row('icon_clock', 'Time', $time, $corporate_color);
+    }
+
+    if ($place) {
+        $rows .= cimne_render_event_row('icon_pin_alt', 'Place', $place, $corporate_color);
+    }
+
     if (!empty($online_streaming)) {
-        $rows .= "
-            <tr>
-                <td style='width: 10%; text-align:center; padding:5px 15px;'>
-                    <img src='https://web.cimne.upc.edu/groups/publicacions/mails/img/icons/icon_laptop{$icon_color}.png' alt='Online streaming' style='width:22px;height:22px;vertical-align: bottom;'/>
-                </td>
-                <td style='padding:5px 15px;font-size:14px;color:#333333;font-weight:bold;'>
-                    <a href='" . esc_url($online_streaming) . "' target='_blank'
-                       style='color:#0057b8;text-decoration:none;font-weight:bold;'>
-                       {$fields['online_streaming']}
-                    </a>
-                </td>
-            </tr>";
-    }
-    if (!empty($registration)) {
-        $rows .= "
-            <tr>
-                <td style='width: 10%; text-align:center; padding:5px 15px;'>
-                    <img src='https://web.cimne.upc.edu/groups/publicacions/mails/img/icons/icon_pencil-edit{$icon_color}.png' alt='Registration' style='width:22px;height:22px;vertical-align: bottom;'/>
-                </td>
-                <td style='padding:5px 15px;font-size:14px;color:#333333;font-weight:bold;'>
-                    <a href='" . esc_url($registration) . "' target='_blank'
-                       style='color:#0057b8;text-decoration:none;font-weight:bold;'>
-                       {$fields['registration']}
-                    </a>
-                </td>
-            </tr>";
+        $content = "<a href='" . esc_url($online_streaming) . "' target='_blank' style='color:#0057b8;text-decoration:none;font-weight:bold;'>" .
+            esc_html($fields['online_streaming']) .
+        '</a>';
+
+        $rows .= cimne_render_event_row('icon_laptop', 'Online streaming', $content, $corporate_color);
     }
 
-    // Si no hay ningún campo, no renderizar nada
-    if (empty($rows)) {
+    if (!empty($registration)) {
+        $content = "<a href='" . esc_url($registration) . "' target='_blank' style='color:#0057b8;text-decoration:none;font-weight:bold;'>" .
+            esc_html($fields['registration']) .
+        '</a>';
+
+        $rows .= cimne_render_event_row('icon_pencil-edit', 'Registration', $content, $corporate_color);
+    }
+
+    if (!$rows) {
         return '';
     }
 
     return "
-    <!-- BLOQUE EVENTO -->
-    <table width='100%' cellpadding='0' cellspacing='0' border='0' style='margin-bottom:30px; border: 2px solid {$corporate_color};vertical-align: bottom;'>
-
-        {$rows}
-    </table>";
+        <table width='100%' cellpadding='0' cellspacing='0' border='0' style='margin-bottom:30px;border:2px solid " . esc_attr($corporate_color) . ";vertical-align:bottom;'>
+            {$rows}
+        </table>";
 }
 
-function render_boton_corporativo_email($url, $text, $corporate_color = "#f9f9f9") {
-    return "
-    <p style='text-align:center; margin:30px 0;'>
-        <a href='" . esc_url($url) . "' target='_blank' style='display:inline-block; padding:12px 25px; background-color: {$corporate_color}; color:#fff; text-decoration:none; font-weight:bold; border-radius:4px;'>
-            {$text}
-        </a>
-    </p>";
-}
+/* ============================================================
+ * Limpieza contenido Divi
+ * ============================================================ */
 
-function previous_editions_field_email($post_ID) {
-    $previous_editions = get_post_meta($post_ID, 'previous_editions', true);
-    console_log("Previous editions meta value: " . $previous_editions);
-    if ( !empty($previous_editions) ) {
-        // return "<p style='font-size:14px;line-height:1.7;color:#333333;margin:0 0 20px 0; width:100%;'>{$previous_editions }</p>";
-        return $previous_editions;
-    }
-    return '';
-}
-
-
-
-function limpiar_html_divi_para_email($html,  $corporate_bg_color = "#f9f9f9", $entry_type = 'default') {
-
-  console_log("Tipo de entrada: " . $entry_type);
-
-    // Procesar shortcodes y formato
+function cimne_clean_divi_html_for_email($html, $corporate_bg_color = '#d9e8f8', $entry_type = 'default') {
     $html = apply_filters('the_content', $html);
     $html = do_shortcode($html);
     $html = wpautop($html);
 
-    // Eliminar shortcodes Divi
     $html = preg_replace('/\[\/?et_pb_[^\]]*\]/', '', $html);
+    $html = preg_replace('/<!--(.*?)-->/s', '', $html);
 
-    // Eliminar comentarios HTML (incluidos de Divi)
-    $html = preg_replace('/<!--(.*?)-->/', '', $html);
-
-    // Reemplazar iframes con enlaces
     $html = preg_replace_callback(
         '/<iframe[^>]*src=["\']([^"\']+)["\'][^>]*><\/iframe>/i',
-        function($matches) {
+        function ($matches) {
             $src = esc_url($matches[1]);
             return '<p><a href="' . $src . '" target="_blank" style="color:#0057b8;text-decoration:none;font-weight:bold;">Video</a></p>';
         },
         $html
     );
 
-    // Eliminar DIVs con clases Divi pero mantener contenido interno
     $html = preg_replace('/<div[^>]*class="[^"]*et_pb_[^"]*"[^>]*>/i', '<div>', $html);
-
-    // Eliminar atributos innecesarios para email
     $html = preg_replace('/\s(class|id|data-[^=]*|aria-[^=]*|role)="[^"]*"/i', '', $html);
-
-    // Eliminar DIVs con atributos style e id específicos (como wp-caption)
     $html = preg_replace('/<div[^>]*>/i', '<div>', $html);
-
-    // Normalizar divs vacíos
     $html = preg_replace('/<div>\s*<\/div>/', '', $html);
 
-    // Convertir DIV a P
-    $html = str_replace('<div>', '<p>', $html);
-    $html = str_replace('</div>', '</p>', $html);
-
-    // Limpiar dobles P
+    $html = str_replace(['<div>', '</div>'], ['<p>', '</p>'], $html);
     $html = preg_replace('/<p>\s*<p>/', '<p>', $html);
     $html = preg_replace('/<\/p>\s*<\/p>/', '</p>', $html);
 
-    if ( strtolower( $entry_type ) === 'newsletter' ) {
-        $html = preg_replace('/<p>/', '<p style="font-size:14px;line-height:1.6;color:#222222;margin:0 0 18px 0;">', $html);
-        $html = preg_replace('/<h1>/', '<h1 style="font-size:26px;color:#0057b8;margin-bottom:22px;">', $html);
-        $html = preg_replace('/<h2>/', '<h2 style="font-size:22px;color:#fff; background-color: #0057b8; padding: 20px 0 5px 12px; ">', $html);
-        $html = preg_replace('/<h3>/', '<h3 style="font-size:18px;color:#f3921a;margin:20px 0 14px;">', $html);
-        $html = preg_replace('/<h4>/', '<h4 style="font-size:16px;color:#0057b8;margin:18px 0 12px;">', $html);
-        $html = preg_replace('/<h5>/', '<h5 style="font-size:16px;color:#0057b8;margin:16px 0 10px;">', $html);
-        $html = preg_replace('/<a/', '<a style="color:#02A0A5;"', $html);
+    if (strtolower($entry_type) === 'newsletter') {
+        $replacements = [
+            '/<p>/' => '<p style="font-size:14px;line-height:1.6;color:#222222;margin:0 0 18px 0;">',
+            '/<h1>/' => '<h1 style="font-size:26px;color:#0057b8;margin-bottom:22px;">',
+            '/<h2>/' => '<h2 style="font-size:22px;color:#fff;background-color:#0057b8;padding:20px 0 5px 12px;">',
+            '/<h3>/' => '<h3 style="font-size:18px;color:#f3921a;margin:20px 0 14px;">',
+            '/<h4>/' => '<h4 style="font-size:16px;color:#0057b8;margin:18px 0 12px;">',
+            '/<h5>/' => '<h5 style="font-size:16px;color:#0057b8;margin:16px 0 10px;">',
+            '/<a(?![^>]*style=)/' => '<a style="color:#02A0A5;"',
+        ];
     } else {
-        
-        // Tipografía corporativa inline
-        $html = preg_replace('/<p>/', '<p style="font-size:14px;line-height:1.7;color:#333333;margin:0 0 20px 0;">', $html);
-        $html = preg_replace('/<h1>/', '<h1 style="font-size:26px;color:#1a1a1a;margin-bottom:20px;">', $html);
-        $html = preg_replace('/<h2>/', '<h2 style="font-size:22px;color:#1a1a1a;margin:25px 0 15px;">', $html);
-        $html = preg_replace('/<h3>/', '<h3 style="font-size:18px;color:#1a1a1a;margin:20px 0 10px;">', $html);
-        $html = preg_replace('/<h4>/', '<h4 style="font-size:16px;color:#1a1a1a;margin:20px 0 10px;">', $html);
-        $html = preg_replace('/<h5>/', '<h5 style="font-size:16px;color:#1a1a1a;margin:20px 0 10px;">', $html);
+        $replacements = [
+            '/<p>/' => '<p style="font-size:14px;line-height:1.7;color:#333333;margin:0 0 20px 0;">',
+            '/<h1>/' => '<h1 style="font-size:26px;color:#1a1a1a;margin-bottom:20px;">',
+            '/<h2>/' => '<h2 style="font-size:22px;color:#1a1a1a;margin:25px 0 15px;">',
+            '/<h3>/' => '<h3 style="font-size:18px;color:#1a1a1a;margin:20px 0 10px;">',
+            '/<h4>/' => '<h4 style="font-size:16px;color:#1a1a1a;margin:20px 0 10px;">',
+            '/<h5>/' => '<h5 style="font-size:16px;color:#1a1a1a;margin:20px 0 10px;">',
+        ];
     }
-    // Imágenes optimizadas para email
+
+    foreach ($replacements as $pattern => $replacement) {
+        $html = preg_replace($pattern, $replacement, $html);
+    }
+
     $html = preg_replace_callback(
         '/<img([^>]*?)>/i',
-        function($matches) {
+        function ($matches) {
             $img_tag = $matches[1];
             $style = 'max-width:100%;height:auto;display:block;margin:20px 0;';
+
             if (preg_match('/style="([^"]*)"/i', $img_tag, $style_match)) {
-                $img_tag = preg_replace('/style="[^"]*"/i', 'style="' . $style_match[1] . $style . '"', $img_tag);
+                $img_tag = preg_replace('/style="[^"]*"/i', 'style="' . esc_attr($style_match[1] . $style) . '"', $img_tag);
             } else {
-                $img_tag .= ' style="' . $style . '"';
+                $img_tag .= ' style="' . esc_attr($style) . '"';
             }
+
             return '<img' . $img_tag . ' />';
         },
         $html
     );
 
+    // Imágenes optimizadas para email
+    // $html = preg_replace_callback(
+    //     '/<img([^>]*?)>/i',
+    //     function($matches) {
+    //         $img_tag = $matches[1];
+    //         $style = 'max-width:100%;height:auto;display:block;margin:20px 0;';
+    //         if (preg_match('/style="([^"]*)"/i', $img_tag, $style_match)) {
+    //             $img_tag = preg_replace('/style="[^"]*"/i', 'style="' . $style_match[1] . $style . '"', $img_tag);
+    //         } else {
+    //             $img_tag .= ' style="' . $style . '"';
+    //         }
+    //         return '<img' . $img_tag . ' />';
+    //     },
+    //     $html
+    // );
     return trim($html);
+    // return trim(wp_kses_post($html));
 }
 
+/* ============================================================
+ * Header y botones
+ * ============================================================ */
 
-// Agregar enlace de envío por email en la lista de posts en el admin
-add_filter('post_row_actions', 'agregar_enlace_send_email', 10, 2);
-function agregar_enlace_send_email($actions, $post) {
+function cimne_render_event_header($post, $header_image) {
+    return '
+        <tr>
+            <td class="title" style="font-size:28px;font-weight:bold;margin-bottom:20px;line-height:1.3;">
+                <div class="contenedor-imagen" style="position:relative;display:inline-block;overflow:hidden;">
+                    <img src="' . esc_url($header_image) . '" style="display:block;width:100%;height:auto;" />
+                    <div class="texto-superpuesto" style="position:absolute;top:30%;padding:15px;">
+                        <h1 style="margin:0;font-size:24px;line-height:1;">' . esc_html($post->post_title) . '</h1>
+                    </div>
+                </div>
+            </td>
+        </tr>';
+}
 
-    if ($post->post_type === 'post') {
+function cimne_render_default_header($post, $entry_type, $strings, $corporate_color) {
+    $header_image = 'https://web.cimne.upc.edu/groups/publicacions/mails/2026/plantilla/banner_nota_de_premsa_md.jpg';
+    $header_logo = 'https://web.cimne.upc.edu/groups/publicacions/mails/2026/plantilla/logo-color-cimne-web-sm.png';
 
-        $lang = isset($_GET['lang']) ? sanitize_text_field($_GET['lang']) : 'en';
+    $is_newsletter = strtolower($entry_type) === 'newsletter';
+    $header_title = $is_newsletter ? $post->post_title : $strings['press_release'];
+    $post_title = $is_newsletter ? '' : $post->post_title;
 
-        $url = add_query_arg([
-            'action'  => 'send_post_email',
-            'lang'    => $lang,
-            'post_id' => $post->ID,
-        ], admin_url('admin-post.php'));
+    return '
+        <tr>
+            <td style="font-size:28px;font-weight:bold;margin-bottom:20px;line-height:1.3;">
+                <img width="600" height="auto" src="' . esc_url($header_image) . '" style="display:block;margin-bottom:30px;max-width:100%;height:auto;" />
+            </td>
+        </tr>
+        <tr>
+            <td style="padding-bottom:20px;">
+                <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                    <tr>
+                        <td width="180" valign="top">
+                            <img width="180" height="auto" src="' . esc_url($header_logo) . '" style="display:block;max-width:100%;height:auto;" />
+                        </td>
+                        <td width="20"></td>
+                        <td valign="top" style="font-size:24px;font-weight:bold;color:#000;line-height:1.3;border-bottom:2px solid #000;padding-bottom:5px;">
+                            ' . esc_html($header_title) . '
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+        <tr>
+            <td style="font-size:28px;font-weight:bold;color:' . esc_attr($corporate_color) . ';margin-bottom:20px;line-height:1.3;">
+                ' . esc_html($post_title) . '
+            </td>
+        </tr>
+        <tr height="10"><td><br /></td></tr>';
+}
 
-        $actions['send_email'] = '<a href="' . esc_url($url) . '">Send Email</a>';
+function cimne_render_read_more_button($url, $text, $corporate_color) {
+    return '
+        <table align="center" cellpadding="0" cellspacing="0" border="0">
+            <tr>
+                <td align="center" style="border:2px solid ' . esc_attr($corporate_color) . ';">
+                    <a href="' . esc_url($url) . '" target="_blank"
+                       style="display:inline-block;padding:15px 32px;font-size:17px;color:' . esc_attr($corporate_color) . ';text-decoration:none;font-weight:bold;font-family:Arial,sans-serif;">
+                        ' . esc_html($text) . '
+                    </a>
+                </td>
+            </tr>
+        </table>';
+}
+
+function cimne_render_newsletter_previous_editions($post_ID, $corporate_bg_color, $entry_type) {
+    $previous = get_post_meta($post_ID, 'previous_editions', true);
+
+    if (!$previous) {
+        return '';
     }
+
+    $previous_html = cimne_clean_divi_html_for_email($previous, $corporate_bg_color, $entry_type);
+
+    return '
+        <table cellpadding="0" cellspacing="0" border="0">
+            <tr>
+                <td style="border:2px solid #f3921a;background-color:#f3921a26;padding:10px 20px;">
+                    ' . $previous_html . '
+                </td>
+            </tr>
+        </table>';
+}
+
+/* ============================================================
+ * Footer
+ * ============================================================ */
+
+function cimne_render_email_footer($corporate_color) {
+    return "
+        <table style='table-layout:fixed;background-color:" . esc_attr($corporate_color) . "' cellspacing='0' cellpadding='0' width='650'>
+            <tbody>
+                <tr height='20'><td width='20'><br></td><td width='600'><br></td><td width='20'><br></td></tr>
+                <tr>
+                    <td width='20'><br></td>
+                    <td>
+                        <table style='table-layout:fixed;' cellspacing='0' cellpadding='0'>
+                            <tbody>
+                                <tr>
+                                    <td></td><td></td>
+                                    <td><p style='color:#ffffff;font-weight:bold;'><font face='Arial'>About CIMNE</font></p></td>
+                                    <td></td>
+                                    <td><p style='color:#ffffff;font-weight:bold;'><font face='Arial'>Contact</font></p></td>
+                                </tr>
+                                <tr>
+                                    <td width='90'>
+                                        <img src='https://web.cimne.upc.edu/groups/publicacions/mails/2025/seminars/img/logo-blanco-cimne.png' width='90' alt='CIMNE'>
+                                    </td>
+                                    <td width='10'></td>
+                                    <td width='330'>
+                                        <p style='color:#ffffff;'><font face='Arial'>CIMNE is a public R+D centre in computational engineering with a strong focus on knowledge transfer.</font></p>
+                                    </td>
+                                    <td width='10'></td>
+                                    <td width='160'>
+                                        <p style='color:#ffffff;'><font face='Arial'>+34 93 401 74 95<br>CIMNE Building C1<br>Campus Nord UPC<br>C/ Gran Capità S/N<br>08034 Barcelona, Spain</font></p>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style='color:#ffffff;'>Follow us on</td>
+                                    <td></td>
+                                    <td>
+                                        <a href='https://www.facebook.com/cimne' target='_blank'><img src='https://web.cimne.upc.edu/groups/publicacions/mails/2022/coffee-talks/img/social-facebook.png' alt='facebook'></a>
+                                        <a href='https://www.linkedin.com/company/cimne' target='_blank'><img src='https://web.cimne.upc.edu/groups/publicacions/mails/2022/coffee-talks/img/social-linkedin.png' alt='linkedin'></a>
+                                        <a href='https://twitter.com/cimne' target='_blank'><img src='https://web.cimne.upc.edu/groups/publicacions/mails/2022/coffee-talks/img/social-twitter.png' alt='twitter'></a>
+                                        <a href='https://www.youtube.com/cimneMC' target='_blank'><img src='https://web.cimne.upc.edu/groups/publicacions/mails/2022/coffee-talks/img/social-youtube.png' alt='youtube'></a>
+                                    </td>
+                                    <td></td><td></td>
+                                </tr>
+                                <tr>
+                                    <td></td><td></td>
+                                    <td style='color:#ffffff;'>
+                                        <a href='mailto:cimne@cimne.upc.edu' style='color:#ffffff;'>cimne@cimne.upc.edu</a>
+                                        | <a href='http://www.cimne.com' style='color:#ffffff;'>www.cimne.com</a>
+                                    </td>
+                                    <td></td>
+                                    <td style='color:#ffffff;'>Copyright © 2026 CIMNE.<br>All rights reserved.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </td>
+                    <td width='20'><br></td>
+                </tr>
+                <tr height='20'><td width='20'><br></td><td width='600'><br></td><td width='20'><br></td></tr>
+            </tbody>
+        </table>";
+}
+
+/* ============================================================
+ * Construcción del email
+ * ============================================================ */
+
+function cimne_build_email_html($post_ID) {
+    $post = get_post($post_ID);
+
+    if (!$post) {
+        return '';
+    }
+
+    $locale = cimne_get_request_lang();
+    $strings = cimne_get_email_strings($locale);
+
+    $types = cimne_get_post_types_for_email($post_ID);
+    $event_type = $types['event_type'];
+    $entry_type = $types['entry_type'];
+
+    $is_event = !empty($event_type) || strtolower($entry_type) === 'internal coffee talks';
+
+    $theme = cimne_get_email_theme($event_type, $entry_type);
+    $corporate_color = $theme['corporate_color'];
+    $corporate_bg_color = $theme['corporate_bg_color'];
+
+    $url_post = get_permalink($post_ID);
+
+    if ($is_event) {
+        $header_html = cimne_render_event_header($post, $theme['header_image']);
+        $event_fields_html = cimne_render_event_custom_fields_email($post_ID, $locale, $corporate_color);
+        $button_html = cimne_render_read_more_button($url_post, $strings['button'], $corporate_color);
+    } else {
+        $header_html = cimne_render_default_header($post, $entry_type, $strings, $corporate_color);
+        $event_fields_html = '';
+        $button_html = strtolower($entry_type) === 'newsletter'
+            ? cimne_render_newsletter_previous_editions($post_ID, $corporate_bg_color, $entry_type)
+            : '';
+    }
+
+    $content_html = cimne_clean_divi_html_for_email($post->post_content, $corporate_bg_color, $entry_type);
+    $footer_html = cimne_render_email_footer($corporate_color);
+
+    return "
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset='UTF-8' />
+    <meta name='viewport' content='width=device-width, initial-scale=1.0' />
+    <title>" . esc_html($post->post_title) . "</title>
+</head>
+<body style='margin:0;padding:0;background-color:#eef1f4;font-family:Arial,sans-serif;'>
+
+<table style='width:100%;padding:40px 0;background-color:#eef1f4;' cellpadding='0' cellspacing='0' border='0'>
+    <tr>
+        <td align='center'>
+            <table style='background-color:#ffffff;padding:40px;' width='650' cellpadding='0' cellspacing='0' border='0'>
+                <tr>
+                    <td style='font-size:28px;font-weight:bold;color:" . esc_attr($corporate_color) . ";margin-bottom:20px;line-height:1.3;'>
+                        <p style='font-size:14px;color:#999999;margin-bottom:30px;'>
+                            " . esc_html($strings['cannot_read']) . "
+                            <a href='" . esc_url($url_post) . "' target='_blank' style='color:#0057b8;text-decoration:none;font-weight:bold;'>
+                                " . esc_html($strings['here']) . "
+                            </a>.
+                        </p>
+                    </td>
+                </tr>
+
+                {$header_html}
+
+                <tr>
+                    <td>{$event_fields_html}</td>
+                </tr>
+
+                <tr height='10'><td><br /></td></tr>
+
+                <tr>
+                    <td style='font-size:14px;line-height:1.7;color:#333333;padding-bottom:35px;'>
+                        {$content_html}
+                    </td>
+                </tr>
+
+                <tr>
+                    <td align='center' style='padding-bottom:40px;'>
+                        {$button_html}
+                    </td>
+                </tr>
+            </table>
+
+            {$footer_html}
+        </td>
+    </tr>
+</table>
+
+</body>
+</html>";
+}
+
+/* ============================================================
+ * Acción en listado admin
+ * ============================================================ */
+
+add_filter('post_row_actions', 'cimne_add_send_email_row_action', 10, 2);
+
+function cimne_add_send_email_row_action($actions, $post) {
+    if ($post->post_type !== 'post') {
+        return $actions;
+    }
+
+    if (!current_user_can('edit_post', $post->ID)) {
+        return $actions;
+    }
+
+    $lang = cimne_get_request_lang();
+
+    $url = add_query_arg([
+        'action' => 'send_post_email',
+        'lang' => $lang,
+        'post_id' => $post->ID,
+    ], admin_url('admin-post.php'));
+
+    $url = wp_nonce_url($url, 'send_post_email_' . $post->ID);
+
+    $actions['send_email'] = '<a href="' . esc_url($url) . '">Send Email</a>';
 
     return $actions;
 }
 
+/* ============================================================
+ * Pantalla de envío
+ * ============================================================ */
 
+add_action('admin_post_send_post_email', 'cimne_render_send_email_screen');
 
+function cimne_render_send_email_screen() {
+    $post_ID = isset($_GET['post_id']) ? absint($_GET['post_id']) : 0;
 
-add_action('admin_post_send_post_email', 'pantalla_envio_email_post');
-function pantalla_envio_email_post() {
-
-    // Verificar permisos
-    if (!current_user_can('edit_posts')) {
-        wp_die('No tienes permisos para descargar este archivo.');
-    }
-    // Verificar ID del post
-    if (!isset($_GET['post_id'])) {
+    if (!$post_ID) {
         wp_die('Falta el ID del post.');
     }
-    // Obtener post
-    $post_ID = intval($_GET['post_id']);
+
+    if (!current_user_can('edit_post', $post_ID)) {
+        wp_die('No tienes permisos para acceder a este contenido.');
+    }
+
+    check_admin_referer('send_post_email_' . $post_ID);
+
     $post = get_post($post_ID);
+
     if (!$post) {
         wp_die('El post no existe.');
     }
-   
-    // Obtener tipo de evento desde la categoría hija de Events
-    $categories = get_the_category($post_ID);
-    $event_type = '';
-    $entry_type = '';
-    
-    foreach ($categories as $category) {
-        // Verificar si la categoría es hija de Events (categoría padre)
-        $parent = get_category($category->parent);
-        console_log("Checking category: " . $category->name . " with parent: " . ($parent ? $parent->name : 'None'));
-        if ($parent && ($parent->slug === 'events' || $parent->slug === 'eventos' || $parent->slug === 'esdeveniments')) {
-            $event_type = $category->name;
-            break;
-        } else if ($parent && ($parent->slug === 'preaward' )) {
-            $entry_type = $category->name;
-            break;
-        }
-    }
 
-    // language detection
-    $url_lang = isset($_GET['lang']) ? sanitize_text_field($_GET['lang']) : null;
-    if ($url_lang) {
-        $locale = $url_lang;
-    } else {   
-        $locale = 'en';
-    }
+    $html_email = cimne_build_email_html($post_ID);
+    $subject = esc_attr($post->post_title);
 
-    // Definir etiquetas según idioma
-    if ( strpos( $locale, 'es' ) === 0 ) {
-        $strings = [
-            'button'             => 'Leer más',
-            'si_no_puedes_leer' => 'Si no puedes leer este correo, haz clic',
-            'aqui'               => 'aquí',
-            'nota_de_prensa'     => 'Nota de prensa'
-        ];
-    } elseif ( strpos( $locale, 'ca' ) === 0 ) {
-        $strings = [
-            'button'             => 'Llegir més',
-            'si_no_puedes_leer' => 'Si no pots llegir aquest correu, fes clic',
-            'aqui'               => 'aquí',
-            'nota_de_prensa'     => 'Nota de premsa'
-        ];
-    } else {
-        // English (default)
-        $strings = [
-            'button'             => 'Read more',
-            'si_no_puedes_leer' => 'If you cannot read this email, click',
-            'aqui'               => 'here',
-            'nota_de_prensa'     => 'Press release'
-        ];
-    }
-
-    // Definir colores e imagen de cabecera según tipo de evento
-    if (!empty($event_type)) {
-        console_log("Event type: " . $event_type);
-        switch (strtolower($event_type)) {
-            case 'coffee talk':
-                console_log("coffee talk");
-                $header_image = 'https://web.cimne.upc.edu/groups/publicacions/mails/2026/plantilla/banner_coffee_talks_md.jpg';
-                $corporate_color = "#02a0a5"; // Blue
-                $corporate_bg_color = "rgba(2, 160, 165, 0.2)"; 
-                break;
-            case 'seminars':
-            case 'seminaris':
-            case 'seminarios':
-                console_log("color orange for seminar");
-                $header_image = 'https://web.cimne.upc.edu/groups/publicacions/mails/2026/plantilla/banner_seminars_md.jpg';
-                $corporate_color = "#f3921a"; // Orange
-                $corporate_bg_color = "rgba(243, 146, 26, 0.2)"; // Orange
-                break;
-            case 'conferences':
-            case 'conferències':
-            case 'conferencias':
-                console_log("color default for conference");
-                $header_image = 'https://web.cimne.upc.edu/groups/publicacions/mails/2026/plantilla/banner_default.jpg';
-                $corporate_color = "#0057b8"; // default
-                $corporate_bg_color = "rgba(128, 0, 128, 0.2)"; // default
-                break;
-            case 'congress':
-            case 'congrés':
-            case 'congreso':
-                console_log("color default for congress");
-                $header_image = 'https://web.cimne.upc.edu/groups/publicacions/mails/2026/plantilla/banner_default.jpg';
-                $corporate_color = "#0057b8"; // default
-                $corporate_bg_color = "#F8E7DF"; // default
-                break;
-            case 'thesis defense':
-            case 'defensa de tesi':
-            case 'defensa de tesis':
-            console_log("color dark blue for thesis defense");
-                $header_image = 'https://web.cimne.upc.edu/groups/publicacions/mails/2026/plantilla/banner_tesis_md_rec.jpg';
-                $corporate_color = "#004996"; // Dark Blue
-                $corporate_bg_color = "rgba(0, 73, 150, 0.2)"; // Dark Blue
-                break;
-            case 'workshops':
-                console_log("color default for workshop");
-                $header_image = 'https://web.cimne.upc.edu/groups/publicacions/mails/2026/plantilla/banner_default.jpg';
-                $corporate_color = "#0057b8"; // default
-                $corporate_bg_color = "rgba(0, 128, 128, 0.2)"; // default
-                break;
-            default:
-                $corporate_color = "#0057b8";// Color corporativo CIMNE
-                $corporate_bg_color = "rgba(0, 87, 184, 0.2)"; // CIMNE Blue
-                $header_image = 'https://web.cimne.upc.edu/groups/publicacions/mails/2026/plantilla/banner_default.jpg';
-        }
-
-        $header_htlm = '
-                    <!-- HEADER IMAGE -->
-                    <tr>
-                        <td class="title" style="font-size:28px; font-weight:bold;
-                                   margin-bottom:20px; line-height:1.3;">
-                                   <div class="contenedor-imagen" style="position: relative; display: inline-block; overflow: hidden;">
-                                        <img src="'.$header_image.'" style="display:block;width:100%;height:auto;" />
-                                        <div class="texto-superpuesto" style="position: absolute; top: 30%; padding: 15px;">
-                                            <h1 style="margin:0;font-size:24px;line-height: 1;">'.$post->post_title.'</h1>
-                                        </div>
-                                    </div>
-
-                            <!--<img width="600" height="auto" src="{$header_image}" 
-                                 style="display:block;margin-bottom:30px;
-                                        max-width:100%;height:auto;" />-->
-                        </td>
-                    </tr>
-                    
-
-                    <!-- TÍTULO -->
-                    <!--<tr>
-                        <td class="title" style="font-size:28px; font-weight:bold; color: '.$corporate_color.';
-                                   margin-bottom:20px; line-height:1.3;">
-                            '.$post->post_title.'
-                        </td>
-
-                    </tr>
-                    <tr height="10">
-                        <td><br/></td>
-                    </tr>-->
-                    ';
-
-        // Campos personalizados del evento
-        $event_fields_html = render_event_custom_fields_email($post_ID, $corporate_color);  
-
-        $boton_corporativo = '
-            <table align="center" cellpadding="0" cellspacing="0" border="0">
-                <tr>
-                    <td align="center"
-                        style="border: 2px solid'. $corporate_color . ' ;">
-                        <a href="'.$url_post.'" target="_blank"
-                            style="display:inline-block;padding:15px 32px;
-                                    font-size:17px;color:'.$corporate_color.';
-                                    text-decoration:none;font-weight:bold;
-                                    font-family:Arial,sans-serif;">
-                            '. $strings["button"] .'
-                        </a>
-                    </td>
-                </tr>
-            </table>';
-            
-
-    } else {
-        $corporate_color = "#0057b8";// Color corporativo CIMNE
-        $corporate_bg_color = "rgba(0, 87, 184, 0.2)"; // CIMNE Blue
-        $header_image = 'https://web.cimne.upc.edu/groups/publicacions/mails/2026/plantilla/banner_nota_de_premsa_md.jpg';
-        $header_logo = 'https://web.cimne.upc.edu/groups/publicacions/mails/2026/plantilla/logo-color-cimne-web-sm.png';
-        $header_default_style = 'color: #0057b8;';
-        $event_fields_html = '';
-        $header_title = strtolower($entry_type) === 'newsletter' ? $post->post_title : $strings['nota_de_prensa'] ;
-        $post_title = strtolower($entry_type) === 'newsletter' ? '' : $post->post_title ;
-        $previous_editions_field_html = '';
-
-
-        //$previous_editions_field_html = previous_editions_field_email($post_ID);
-        $previous_editions_field_html = limpiar_html_divi_para_email(get_post_meta($post_ID, 'previous_editions', true), $corporate_bg_color, $entry_type);
-        
-       
-        console_log("Previous editions Field: " . $previous_editions_field);
-        console_log("Previous editions Field HTML: " . $previous_editions_field_html);
-        
-         
-        $header_htlm = '
-                    <!-- HEADER IMAGE -->
-                    <tr>
-                        <td class="title" style="font-size:28px; font-weight:bold;
-                                   margin-bottom:20px; line-height:1.3;">
-
-                            <img width="600" height="auto" src="'.$header_image.'" 
-                                 style="display:block;margin-bottom:30px;
-                                        max-width:100%;height:auto;" />
-                        </td>
-                    </tr>
-                    
-
-                    <!-- TÍTULO -->
-                    <tr>
-                        <td style="padding-bottom:20px;">
-                            <table width="100%" cellpadding="0" cellspacing="0" border="0">
-                                <tr>
-                                    <td width="180" valign="top">
-                                        <img width="180" height="auto" src="'.$header_logo.'" 
-                                             style="display:block;max-width:100%;height:auto;" />
-                                    </td>
-                                    <td width="20"></td>
-                                    <td valign="top" style="font-size:24px; font-weight:bold; color: #000; line-height:1.3; border-bottom: 2px solid #000; padding-bottom:5px;">
-                                        '. $header_title .'
-                                    </td>
-                                </tr>
-                            </table>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td class="title" style="font-size:28px; font-weight:bold; color: '. $corporate_color .';
-                                   margin-bottom:20px; line-height:1.3;">
-                            '. $post_title .'
-                        </td>
-                    </tr>
-                    <tr height="10">
-                        <td><br/></td>
-                    </tr>
-                    ';
-        $boton_corporativo =  strtolower($entry_type) === 'newsletter' ?
-          ' 
-            <table cellpadding="0" cellspacing="0" border="0">
-                <tr>
-                    <td style="border: 2px solid #f3921a ; background-color: #f3921a26; padding: 10px 20px; ">
-                        ' . $previous_editions_field_html . '
-                        
-                    </td>
-                </tr>
-            </table>' : 
-            '';
-    }
-
-    // Sanitizar Divi → HTML email friendly
-    $contenido_html = limpiar_html_divi_para_email($post->post_content, $corporate_bg_color, $entry_type);
-
-    // URL del post (para el botón)
-    $url_post = get_permalink($post_ID);
-
-    // Imagen destacada procesada para email
-    $imagen_destacada = '';
-    if (has_post_thumbnail($post_ID)) {
-        $img_src = get_the_post_thumbnail_url($post_ID, 'large');
-        $imagen_destacada = "<img src='{$img_src}' width='100%' 
-            style='display:block;border-radius:8px;margin-bottom:25px;max-width:100%;height:auto;' />";
-    }
-
-    // === PLANTILLA CORPORATIVA ===
-    $html_email = "
+    ?>
     <!DOCTYPE html>
     <html>
     <head>
-        <meta charset='UTF-8' />
-        <meta name='viewport' content='width=device-width, initial-scale=1.0' />
-        <title>{$post->post_title}</title>
-
+        <meta charset="UTF-8">
+        <title>Enviar email</title>
     </head>
-    
-    <body style='margin:0; padding:0; background-color:#eef1f4; font-family:Arial, sans-serif;'>
+    <body style="font-family:Arial;padding:40px;max-width:900px;">
 
-    <table class='table-wrapper' style='width:100%; padding:40px 0; background-color:#eef1f4;' cellpadding='0' cellspacing='0' border='0'>
-        <tr>
-            <td align='center'>
+        <h2>Email listo para enviar</h2>
 
-                <table class='main' style='background-color: #ffffff; padding:40px;' width='650' cellpadding='0' cellspacing='0' border='0'>
-                    <tr>
-                        <td class='title' style='font-size:28px; font-weight:bold; color: {$corporate_color};
-                                   margin-bottom:20px; line-height:1.3;'>
-                            <p style='font-size:14px;color:#999999;
-                                      margin-bottom:30px;'>
-                                {$strings['si_no_puedes_leer']}
-                                <a href='" . esc_url( $url_post ) . "' target='_blank'
-                                   style='color:#0057b8;text-decoration:none;font-weight:bold;'>
-                                    {$strings['aqui']}
-                                </a>.
-                            </p>
-                        </td>
-                    </tr>
-                    {$header_htlm}
+        <p>
+            1️⃣ Pulsa <strong>Copiar HTML</strong><br>
+            2️⃣ Se abrirá tu cliente de correo<br>
+            3️⃣ Pega el contenido y envía
+        </p>
 
-                    <!-- CUSTOM FIELDS EVENTO -->
-                    <tr>
-                        <td>
-                            {$event_fields_html}
-                        </td>
-                    </tr>
-                    <tr height='10'>
-                        <td><br/></td>
-                    </tr>
+        <button id="copyBtn"
+            style="padding:12px 20px;font-size:16px;background:#0057b8;color:#fff;border:0;border-radius:6px;cursor:pointer;">
+            Copiar HTML
+        </button>
 
-                    <!-- CONTENIDO LIMPIO -->
-                    <tr>
-                        <td style='font-size:14px;line-height:1.7;color:#333333;padding-bottom:35px;'>
-                            {$contenido_html}
-                        </td>
-                    </tr>
+        <span id="status" style="margin-left:15px;color:green;display:none;">
+            ✔ HTML copiado
+        </span>
 
-                    <!-- BOTÓN CORPORATIVO -->
-                    <tr>
-                        <td align='center' style='padding-bottom:40px;'>
-                            {$boton_corporativo}
-                        </td>
-                    </tr>
-                    </table>
-                    
-                    <!-- FOOTER -->
-                    <table style='table-layout:fixed; background-color:{$corporate_color}' class='footer' cellspacing='0' cellpadding='0' width='650'>
-                        <tbody>
-                            <tr height='20'>
-                            <td width='20'><br>
-                            </td>
-                            <td width='600'><br>
-                            </td>
-                            <td width='20'><br>
-                            </td>
-                            </tr>
-                            <tr>
-                            <td width='20'><br>
-                            </td>
-                            <td>
-                                <table style='table-layout:fixed;' class='footer' cellspacing='0' cellpadding='0'>
-                                <tbody>
-                                    <tr>
-                                    <td><br>
-                                    </td>
-                                    <td><br>
-                                    </td>
-                                    <td>
-                                        <p style='color:#ffffff; font-weight:bold;'>
-                                        <font class='title' face='Arial'>About CIMNE</font>
-                                        </p>
-                                    </td>
-                                    <td><br>
-                                    </td>
-                                    <td>
-                                        <p style='color:#ffffff; font-weight:bold;'>
-                                        <font class='title' face='Arial'>Contact</font>
-                                        </p>
-                                    </td>
-                                    </tr>
-                                    <tr height='10'>
-                                    <td><br>
-                                    </td>
-                                    <td><br>
-                                    </td>
-                                    <td><br>
-                                    </td>
-                                    <td><br>
-                                    </td>
-                                    <td><br>
-                                    </td>
-                                    </tr>
-                                    <tr>
-                                    <td width='90'><img class='logo'
-                                        src='https://web.cimne.upc.edu/groups/publicacions/mails/2025/seminars/img/logo-blanco-cimne.png'
-                                        width='90'></td>
-                                    <td width='10'><br>
-                                    </td>
-                                    <td width='330'>
-                                        <p style='color:#ffffff;'>
-                                        <font face='Arial'>CIMNE is a public R+D
-                                            centre in computational engineering with a
-                                            strong focus on knowledge transfer.</font>
-                                        </p>
-                                    </td>
-                                    <td width='10'><br>
-                                    </td>
-                                    <td width='160'>
-                                        <p style='color:#ffffff;'>
-                                        <font face='Arial'>+34 93 401 74 95<br>
-                                            CIMNE Building C1<br>
-                                            Campus Nord UPC<br>
-                                            C/ Gran Capità S/N<br>
-                                            08034 Barcelona, Spain</font>
-                                        </p>
-                                    </td>
-                                    </tr>
-                                    <tr height='10'>
-                                    <td><br>
-                                    </td>
-                                    <td><br>
-                                    </td>
-                                    <td><br>
-                                    </td>
-                                    <td><br>
-                                    </td>
-                                    <td><br>
-                                    </td>
-                                    </tr>
-                                    <tr>
-                                    <td class='title' style='color:#ffffff;'>Follow us on</td>
-                                    <td><br>
-                                    </td>
-                                    <td> <a href='https://www.facebook.com/cimne' alt='' target='_blank' moz-do-not-send='true'><img
-                                            src='https://web.cimne.upc.edu/groups/publicacions/mails/2022/coffee-talks/img/social-facebook.png'
-                                            alt='facebook' moz-do-not-send='true'></a> <a href='https://www.linkedin.com/company/cimne'
-                                        alt='linkedin' target='_blank' moz-do-not-send='true'><img
-                                            src='https://web.cimne.upc.edu/groups/publicacions/mails/2022/coffee-talks/img/social-linkedin.png'
-                                            moz-do-not-send='true'></a> <a href='https://twitter.com/cimne' alt='twitter' target='_blank'
-                                        moz-do-not-send='true'><img
-                                            src='https://web.cimne.upc.edu/groups/publicacions/mails/2022/coffee-talks/img/social-twitter.png'
-                                            moz-do-not-send='true'></a> <a href='https://www.youtube.com/cimneMC' alt='CIMNEMC' target='_blank'
-                                        moz-do-not-send='true'><img
-                                            src='https://web.cimne.upc.edu/groups/publicacions/mails/2022/coffee-talks/img/social-youtube.png'
-                                            moz-do-not-send='true'></a> </td>
-                                    <td><br>
-                                    </td>
-                                    <td><br>
-                                    </td>
-                                    </tr>
-                                    <tr height='10'>
-                                    <td><br>
-                                    </td>
-                                    <td><br>
-                                    </td>
-                                    <td><br>
-                                    </td>
-                                    <td><br>
-                                    </td>
-                                    <td><br>
-                                    </td>
-                                    </tr>
-                                    <tr>
-                                    <td><br>
-                                    </td>
-                                    <td><br>
-                                    </td>
-                                    <td class='links'><a href='mailto:cimne@cimne.upc.edu' class='moz-txt-link-freetext'
-                                        moz-do-not-send='true' style='color:#ffffff;'>cimne@cimne.upc.edu</a>
-                                        | <a href='http://www.cimne.com' moz-do-not-send='true' style='color:#ffffff;'>www.cimne.com</a></td>
-                                    <td><br>
-                                    </td>
-                                    <td style='color:#ffffff;'>Copyright © 2026 CIMNE.<br>
-                                        All rights reserved.</td>
-                                    </tr>
-                                </tbody>
-                                </table>
-                            </td>
-                            <td width='20'><br>
-                            </td>
-                            </tr>
-                            <tr height='20'>
-                            <td width='20'><br>
-                            </td>
-                            <td width='600'><br>
-                            </td>
-                            <td width='20'><br>
-                            </td>
-                            </tr>
-                        </tbody>
-                    </table>
-            </td>
-        </tr>
-    </table>
+        <textarea id="htmlContent" style="width:100%;height:300px;margin-top:20px;"><?php echo esc_textarea($html_email); ?></textarea>
 
-    </body>
-    </html>
-    ";
+        <button id="volverBtn"
+            style="margin-top:20px;padding:10px 15px;font-size:14px;background:#eee;border:1px solid #ccc;border-radius:4px;cursor:pointer;"
+            onclick="window.history.back();">
+            ← Volver
+        </button>
 
-    // Nombre del archivo
-    // $file_name = 'post-' . $post_ID . '-' . sanitize_title($post->post_title) . '.html';
+        <script>
+        const btn = document.getElementById('copyBtn');
+        const status = document.getElementById('status');
+        const content = document.getElementById('htmlContent');
 
-    // header('Content-Type: text/html; charset=UTF-8');
-    // header('Content-Disposition: attachment; filename="' . $file_name . '"');
+        function legacyCopy() {
+            content.focus();
+            content.select();
 
-    // echo $html_email;
-    // exit;
-
-    $subject = esc_attr($post->post_title);
-    ?>
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <title>Enviar email</title>
-</head>
-<body style="font-family:Arial;padding:40px;max-width:900px;">
-
-    <h2>Email listo para enviar</h2>
-
-    <p>
-        1️⃣ Pulsa <strong>Copiar HTML</strong><br>
-        2️⃣ Se abrirá tu cliente de correo<br>
-        3️⃣ Pega el contenido y envía
-    </p>
-
-    <button id="copyBtn"
-        style="padding:12px 20px;font-size:16px;
-               background:#0057b8;color:#fff;border:0;
-               border-radius:6px;cursor:pointer;">
-        Copiar HTML
-    </button>
-
-    <span id="status" style="margin-left:15px;color:green;display:none;">
-        ✔ HTML copiado
-    </span>
-
-    <textarea id="htmlContent"
-        style="width:100%;height:300px;margin-top:20px;">
-<?= esc_textarea($html_email); ?>
-    </textarea>
-    
-    <button id="volverBtn"
-        style="margin-top:20px;padding:10px 15px;
-               font-size:14px;background:#eee;
-               border:1px solid #ccc;
-               border-radius:4px;
-               cursor:pointer;"
-        onclick="window.history.back();">
-        ← Volver
-    </button>
-
-    <script>
-    const btn = document.getElementById('copyBtn');
-    const status = document.getElementById('status');
-    const content = document.getElementById('htmlContent');
-
-    function legacyCopy() {
-        content.focus();
-        content.select();
-        try {
-            const ok = document.execCommand('copy');
-            return ok;
-        } catch (e) {
-            return false;
-        }
-    }
-
-    btn.addEventListener('click', async () => {
-        let copied = false;
-
-        // 1️⃣ Intentar API moderna
-        if (navigator.clipboard && window.isSecureContext) {
             try {
-                await navigator.clipboard.writeText(content.value);
-                copied = true;
+                return document.execCommand('copy');
             } catch (e) {
-                copied = false;
+                return false;
             }
         }
 
-        // 2️⃣ Fallback clásico
-        if (!copied) {
-            copied = legacyCopy();
-        }
+        btn.addEventListener('click', async () => {
+            let copied = false;
 
-        // 3️⃣ Resultado
-        if (copied) {
-            status.style.display = 'inline';
+            if (navigator.clipboard && window.isSecureContext) {
+                try {
+                    await navigator.clipboard.writeText(content.value);
+                    copied = true;
+                } catch (e) {
+                    copied = false;
+                }
+            }
 
-            setTimeout(() => {
-                window.location.href = "mailto:?subject=<?= $subject ?>";
-            }, 600);
+            if (!copied) {
+                copied = legacyCopy();
+            }
 
-        } else {
-            alert(
-                'No fue posible copiar automáticamente.\n\n' +
-                'Selecciona el contenido y copia manualmente (Ctrl+C / Cmd+C).'
-            );
-        }
-    });
-</script>
+            if (copied) {
+                status.style.display = 'inline';
 
-</body>
-</html>
-<?php
+                setTimeout(() => {
+                    window.location.href = "mailto:?subject=<?php echo rawurlencode($subject); ?>";
+                }, 600);
+            } else {
+                alert(
+                    'No fue posible copiar automáticamente.\n\n' +
+                    'Selecciona el contenido y copia manualmente (Ctrl+C / Cmd+C).'
+                );
+            }
+        });
+        </script>
+
+    </body>
+    </html>
+    <?php
+
     exit;
 }

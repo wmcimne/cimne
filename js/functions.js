@@ -509,157 +509,262 @@ jQuery(function($){
   });
 
 
+/*--------------------------------------------------------------
+ News y events: Navegación y filtrado.
+----------------------------------------------------------------*/
 
-  /*--------------------------------------------------------------
-   News y events: Navegación y filtrado.
-  ----------------------------------------------------------------*/
+const newsPage = document.getElementById("news-blog");
 
-  let newsPage = document.getElementById('news-blog');
+if (isInPage(newsPage)) {
+  const allEvents = Array.from(document.querySelectorAll("article"));
+  const resetButton = document.getElementById("refresh-filter");
+  const applyButton = document.getElementById("apply-filter");
+  const fromDateInput = document.getElementById("start-date");
+  const toDateInput = document.getElementById("end-date");
+  const publicationFilter = document.getElementById("publication");
+  const paginationContainer = document.getElementById("pagination-container");
+  const searchBox = document.getElementById("search-box");
 
-  if (isInPage(newsPage)) {
+  const itemsPerPage = 10;
+  let currentPage = 1;
 
-    const allEvents = document.querySelectorAll("article");
-    const resetButton = document.getElementById("refresh-filter");
-    const applyButton = document.getElementById("apply-filter");
-    let fromDateInput = document.getElementById("start-date");
-    let toDateInput = document.getElementById("end-date");
-    let publicationFilter = document.getElementById("publication");
-    const paginationContainer = document.getElementById("pagination-container");
-    const itemsPerPage = 10; // Número de eventos por página
-    let currentPage = 1;
+  const isEventsSection = () => {
+    return newsPage.classList.contains("section-events");
+  };
 
+  const getSelectedType = () => {
+    return publicationFilter.value.toLowerCase().trim();
+  };
 
+  const getSearchQuery = () => {
+    return searchBox ? searchBox.value.toLowerCase().trim() : "";
+  };
 
-    const paginateEvents = (filteredEvents) => {
-      const totalPages = Math.ceil(filteredEvents.length / itemsPerPage);
-      paginationContainer.innerHTML = "";
+  const getInputDateTimestamp = (input) => {
+    return input.value ? new Date(input.value).getTime() / 1000 : null;
+  };
 
-      if (totalPages <= 1) {
-        displayPaginatedEvents(filteredEvents);
-        return;
-      }
+  const getEventTimestamp = (event) => {
+    const dateElement = event.querySelector(".date");
 
-      // Página -
-      if (currentPage > 1) {
-        const prevButton = document.createElement("button");
-        prevButton.textContent = "«";
-        prevButton.classList.add("pagination-button");
-        prevButton.addEventListener("click", () => {
-          currentPage = Math.max(1, currentPage - 1);
-          paginateEvents(filteredEvents);
-        });
-        paginationContainer.appendChild(prevButton);
-      }
+    if (!dateElement) return null;
 
-      // Primera página
-      const firstButton = document.createElement("button");
-      firstButton.textContent = "1";
-      firstButton.classList.add("pagination-button");
-      if (currentPage === 1) firstButton.classList.add("active");
-      firstButton.addEventListener("click", () => {
-        currentPage = 1;
-        paginateEvents(filteredEvents);
-      });
-      paginationContainer.appendChild(firstButton);
+    const timestamp = parseInt(dateElement.getAttribute("date"), 10);
 
-      // Página activa (si no es primera ni última)
-      if (currentPage !== 1 && currentPage !== totalPages) {
-        const activeButton = document.createElement("button");
-        activeButton.textContent = currentPage;
-        activeButton.classList.add("pagination-button", "active");
-        activeButton.disabled = true; // Deshabilitada para mostrar solo la página activa
-        paginationContainer.appendChild(activeButton);
-      }
+    return Number.isNaN(timestamp) ? null : timestamp;
+  };
 
-      // Última página
-      if (totalPages > 1) {
-        const lastButton = document.createElement("button");
-        lastButton.textContent = totalPages;
-        lastButton.classList.add("pagination-button");
-        if (currentPage === totalPages) lastButton.classList.add("active");
-        lastButton.addEventListener("click", () => {
-          currentPage = totalPages;
-          paginateEvents(filteredEvents);
-        });
-        paginationContainer.appendChild(lastButton);
-      }
+  const getNewsTimestamp = (event) => {
+    const publishedElement = event.querySelector(".published");
 
-      // Página +
-      if (currentPage < totalPages) {
-        const nextButton = document.createElement("button");
-        nextButton.textContent = "»";
-        nextButton.classList.add("pagination-button");
-        nextButton.addEventListener("click", () => {
-          currentPage = Math.min(totalPages, currentPage + 1);
-          paginateEvents(filteredEvents);
-        });
-        paginationContainer.appendChild(nextButton);
-      }
+    if (!publishedElement) return null;
 
-      displayPaginatedEvents(filteredEvents);
-    };
+    const rawDate = publishedElement.textContent
+      .trim()
+      .split(" ")[0]
+      .replace(/\//g, "-");
 
-    const displayPaginatedEvents = (filteredEvents) => {
-      allEvents.forEach(event => event.style.display = "none");
-      const start = (currentPage - 1) * itemsPerPage;
-      const end = start + itemsPerPage;
-      filteredEvents.slice(start, end).forEach(event => event.style.display = "block");
-    };
+    const timestamp = new Date(rawDate).getTime() / 1000;
 
-    const filterEvents = () => {
-      const now = Date.now() / 1000; // Fecha actual en timestamp UNIX
-      //const selectedType = publicationFilter.value.toLowerCase().replace(" ", "-");
-      const selectedType = publicationFilter.value.toLowerCase();
-      const fromDate = fromDateInput.value ? new Date(fromDateInput.value).getTime() / 1000 : null;
-      const toDate = toDateInput.value ? new Date(toDateInput.value).getTime() / 1000 : null;
-      const searchQuery = $('#search-box').val().toLowerCase(); // Obtener el valor del campo de búsqueda
-      let eventDate, eventType;
+    return Number.isNaN(timestamp) ? null : timestamp;
+  };
 
-      const filteredEvents = Array.from(allEvents).filter(event => {
-        //console.log("Es evento? " + newsPage.classList.contains("section-events"));
-        if (newsPage.classList.contains("section-events")) {
-          console.log("Filtrando eventos");
-          eventDate = parseInt(event.querySelector(".date").getAttribute("date"), 10);
-          eventType = event.querySelector('span.rectangle-text').textContent.toLowerCase() === selectedType || selectedType === "";
-          // console.log('eventDate: ' + eventDate);
-          // console.log('eventType: ' + eventType);
-        } else {
-          eventDate = event.querySelector(".published").textContent.trim().split(" ")[0].replace(/\//g, "-");
-          eventDate = new Date(eventDate).getTime() / 1000;
-          //console.log('Categoria: ' + getCategoryFromElement(event));
-          eventType = getCategoryFromElement(event).toLocaleLowerCase() === selectedType || selectedType === "";
-        }
+  const getItemTimestamp = (event) => {
+    return isEventsSection()
+      ? getEventTimestamp(event)
+      : getNewsTimestamp(event);
+  };
 
-        const dateInRange = (!fromDate || eventDate >= fromDate) && (!toDate || eventDate <= toDate);
-        const matchesSearch = searchQuery === "" || event.textContent.toLowerCase().includes(searchQuery); // Verificar si coincide con la búsqueda
+  const getEventType = (event) => {
+    const typeElement = event.querySelector("span.rectangle-text");
 
-        return eventType && dateInRange && matchesSearch;
-      });
+    return typeElement ? typeElement.textContent.toLowerCase().trim() : "";
+  };
 
-      // Reset currentPage if out of bounds
-      const totalPages = Math.ceil(filteredEvents.length / itemsPerPage);
-      if (currentPage > totalPages) currentPage = totalPages || 1;
+  const getNewsType = (event) => {
+    return getCategoryFromElement(event).toLowerCase().trim();
+  };
 
-      paginateEvents(filteredEvents);
-    };
+  const getItemType = (event) => {
+    return isEventsSection()
+      ? getEventType(event)
+      : getNewsType(event);
+  };
 
-    resetButton.addEventListener("click", () => {
-      fromDateInput.value = "";
-      toDateInput.value = "";
-      publicationFilter.value = publicationFilter.options[0].value;
-      $('#search-box').val('');
-      currentPage = 1;
-      filterEvents();
+  const matchesType = (event, selectedType) => {
+    if (!selectedType) return true;
+
+    return getItemType(event) === selectedType;
+  };
+
+  const matchesDateRange = (timestamp, fromDate, toDate) => {
+    if (!timestamp) return false;
+
+    const isAfterStart = !fromDate || timestamp >= fromDate;
+    const isBeforeEnd = !toDate || timestamp <= toDate;
+
+    return isAfterStart && isBeforeEnd;
+  };
+
+  const matchesSearch = (event, searchQuery) => {
+    if (!searchQuery) return true;
+
+    return event.textContent.toLowerCase().includes(searchQuery);
+  };
+
+  const getFilteredEvents = () => {
+    const selectedType = getSelectedType();
+    const searchQuery = getSearchQuery();
+    const fromDate = getInputDateTimestamp(fromDateInput);
+    const toDate = getInputDateTimestamp(toDateInput);
+
+    return allEvents.filter((event) => {
+      const timestamp = getItemTimestamp(event);
+
+      return (
+        matchesType(event, selectedType) &&
+        matchesDateRange(timestamp, fromDate, toDate) &&
+        matchesSearch(event, searchQuery)
+      );
     });
+  };
 
-    applyButton.addEventListener("click", () => {
-      currentPage = 1;
-      filterEvents();
+  const hideAllEvents = () => {
+    allEvents.forEach((event) => {
+      event.style.display = "none";
     });
+  };
 
-    // Aplicar filtro al cargar la página
+  const displayPaginatedEvents = (filteredEvents) => {
+    hideAllEvents();
+
+    const start = (currentPage - 1) * itemsPerPage;
+    const end = start + itemsPerPage;
+
+    filteredEvents.slice(start, end).forEach((event) => {
+      event.style.display = "block";
+    });
+  };
+
+  const createPaginationButton = ({
+    text,
+    isActive = false,
+    isDisabled = false,
+    onClick,
+  }) => {
+    const button = document.createElement("button");
+
+    button.textContent = text;
+    button.classList.add("pagination-button");
+
+    if (isActive) button.classList.add("active");
+    if (isDisabled) button.disabled = true;
+    if (onClick) button.addEventListener("click", onClick);
+
+    return button;
+  };
+
+  const goToPage = (page, filteredEvents) => {
+    currentPage = page;
+    paginateEvents(filteredEvents);
+  };
+
+  const renderPagination = (filteredEvents, totalPages) => {
+    paginationContainer.innerHTML = "";
+
+    if (currentPage > 1) {
+      paginationContainer.appendChild(
+        createPaginationButton({
+          text: "«",
+          onClick: () => goToPage(currentPage - 1, filteredEvents),
+        })
+      );
+    }
+
+    paginationContainer.appendChild(
+      createPaginationButton({
+        text: "1",
+        isActive: currentPage === 1,
+        isDisabled: currentPage === 1,
+        onClick: () => goToPage(1, filteredEvents),
+      })
+    );
+
+    if (currentPage !== 1 && currentPage !== totalPages) {
+      paginationContainer.appendChild(
+        createPaginationButton({
+          text: String(currentPage),
+          isActive: true,
+          isDisabled: true,
+        })
+      );
+    }
+
+    if (totalPages > 1) {
+      paginationContainer.appendChild(
+        createPaginationButton({
+          text: String(totalPages),
+          isActive: currentPage === totalPages,
+          isDisabled: currentPage === totalPages,
+          onClick: () => goToPage(totalPages, filteredEvents),
+        })
+      );
+    }
+
+    if (currentPage < totalPages) {
+      paginationContainer.appendChild(
+        createPaginationButton({
+          text: "»",
+          onClick: () => goToPage(currentPage + 1, filteredEvents),
+        })
+      );
+    }
+  };
+
+  const paginateEvents = (filteredEvents) => {
+    const totalPages = Math.ceil(filteredEvents.length / itemsPerPage);
+
+    if (currentPage > totalPages) {
+      currentPage = totalPages || 1;
+    }
+
+    paginationContainer.innerHTML = "";
+
+    if (totalPages > 1) {
+      renderPagination(filteredEvents, totalPages);
+    }
+
+    displayPaginatedEvents(filteredEvents);
+  };
+
+  const filterEvents = () => {
+    const filteredEvents = getFilteredEvents();
+    paginateEvents(filteredEvents);
+  };
+
+  const resetFilters = () => {
+    fromDateInput.value = "";
+    toDateInput.value = "";
+    publicationFilter.value = publicationFilter.options[0].value;
+
+    if (searchBox) {
+      searchBox.value = "";
+    }
+
+    currentPage = 1;
     filterEvents();
-  }
+  };
+
+  const applyFilters = () => {
+    currentPage = 1;
+    filterEvents();
+  };
+
+  resetButton.addEventListener("click", resetFilters);
+  applyButton.addEventListener("click", applyFilters);
+
+  filterEvents();
+}
 
 	
 // -----------------------------------------------------------------------------
@@ -793,22 +898,7 @@ if (isInPage(tesisPage)) {
      });	
 }
 
-  /*--------------------------------------------------------------
-    Imagen cabecera home random 
-  ----------------------------------------------------------------*/
-  // const headerImageRow = document.querySelector('.home-header-image');
-  // const randomHeaderImage = () => {
-  //   console.log('randomHeaderImage');
-  //   let images = [
-  //     '/wp-content/uploads/2025/05/header3-1.jpg',
-  //     '/wp-content/uploads/2025/05/header2dark-1.jpg',
-  //     '/wp-content/uploads/2025/05/header1-1.jpg'
-  //   ];
-  //   let randomIndex = Math.floor(Math.random() * images.length);
-  //   let headerImage = document.querySelector('.home-header-image');
-  //   headerImage.style.backgroundImage = 'url(' + images[randomIndex] + ')';
-  // }
-  // isInPage(headerImageRow) ? randomHeaderImage() : console.log('headerImageRow not found');
+
 	
 /*--------------------------------------------------------------
     Descarga de eventos en formato ICS 
