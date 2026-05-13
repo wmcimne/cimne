@@ -133,10 +133,12 @@ const generateStaffHTML = ({ rtd_groups }, { personal }, { category }) => {
     console.log( 'category: ' + category);
 
     const container = document.querySelector('#staff-container');
-    // let html = `<h5 class="staff-heading">${wsStrings[locale].leaders}</h5><div class="staff-block">`;
+
     let html = '';
     let leadersId = [];
 	let emailString = '';
+
+    console.log('Grupos de investigación: ' + rtd_groups.length);
 
     console.log('rtd_groups: ' + !!rtd_groups);
 
@@ -171,17 +173,34 @@ const generateStaffHTML = ({ rtd_groups }, { personal }, { category }) => {
         html += '</div>';
     }
 
-    category.forEach((cat) => {
+    const categoryOrder = [
+        "Senior Distinguished Researcher",
+        "Full Research Professor",
+        "Associate Research Professor",
+        "Senior Innovation Leader",
+        "Assistant Research Professor",
+        "Innovation Leader",
+        "Post Doc",
+        "Innovation Developer",
+        "PHD Student",
+        "Master Student",
+        "Innovation Trainee",
+        "Research Engineer",
+        "Staff Scientist",
+        "Undergraduate Students",
+        "Visiting Scientist"
+    ];
+
+    const orderedCategories = category.slice().sort((a, b) => {
+        const indexA = categoryOrder.indexOf(a);
+        const indexB = categoryOrder.indexOf(b);
+        return (indexA === -1 ? categoryOrder.length : indexA) - (indexB === -1 ? categoryOrder.length : indexB);
+    });
+
+    orderedCategories.forEach((cat) => {
         let staffBlock = '';
         personal.forEach(({ first_name, last_name, last_name2, email, role, category: personCategory, phone, person_id }) => {
             if (cat === personCategory && !leadersId.includes(person_id)) {
-                // staffBlock += 
-                // `<div class="staff-item">
-                //     <p class="staff-name">${first_name} ${last_name} ${last_name2}</p>
-                //     <p class="staff-phone">${role ? role : 'No role'}</p>
-                //     <p id="${email}" class="staff-email send-email">${wsStrings[locale].send_email}</p>
-                // </div>`;
-				//emailString = email ? getMailCimne(email) : 'No Email';
                 staffBlock += 
                     `<div class="staff-item">
                         <p id="${person_id}" class="staff-name open-profile"><a href="/about/directory/staff-profile/?id=${person_id}">${first_name} ${last_name} ${last_name2}</a></p>
