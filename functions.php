@@ -334,7 +334,7 @@ function cimne_filtro_eventos_noticias($parent, $content = null) {
         'id' => '0'
         ), $parent );
 
-    console_log($parentCategory);
+    console_log("Parent Category: " . $parentCategory['id']);
 
     $result = '<form class="'.strtolower(get_the_category_by_ID($parentCategory['id'])).'-form "><div class="form-group"><input id="search-box" class="form-control" type="text" pattern="" maxlength="70" placeholder="'. esc_attr( $text_type_something ) .'"></div>';
 
@@ -347,6 +347,7 @@ function cimne_filtro_eventos_noticias($parent, $content = null) {
     $categories = get_categories($args);
 
     console_log($categories);
+    
 
     $result .= '<div class="form-group">';
     $result .= '<select id="publication" class="form-control">';
@@ -612,7 +613,7 @@ add_filter('et_builder_blog_query', 'custom_blog_filter_and_order', 10, 2);
 /*=====================================================================================
 # Crear archivo HTML con formato email
 # Abre un lienzo con opciones para enviar por email
-# Opciones para abrir cliente de email y copiar al portapapeles el codigo HTML
+# Opciones para abrir cliente de email, copiar al portapapeles o descargar el codigo HTML
 # Incluye imagen destacada si existe
 # Usa estilos inline y estructura en tablas para compatibilidad con clientes de email
 ======================================================================================*/
@@ -871,9 +872,13 @@ function cimne_render_event_custom_fields_email($post_ID, $locale, $corporate_co
     }
 
     return "
-        <table width='100%' cellpadding='0' cellspacing='0' border='0' style='margin-bottom:30px;border:2px solid " . esc_attr($corporate_color) . ";vertical-align:bottom;'>
-            {$rows}
-        </table>";
+        <tr>
+            <td>
+                <table width='100%' cellpadding='0' cellspacing='0' border='0' style='margin-bottom:30px;border:2px solid " . esc_attr($corporate_color) . ";vertical-align:bottom;'>
+                        {$rows}
+                </table>
+            </td>
+        </tr>";
 }
 
 /* ============================================================
@@ -990,8 +995,17 @@ function cimne_render_default_header($post, $entry_type, $strings, $corporate_co
     $header_logo = 'https://web.cimne.upc.edu/groups/publicacions/mails/2026/plantilla/logo-color-cimne-web-sm.png';
 
     $is_newsletter = strtolower($entry_type) === 'newsletter';
+    console_log('Entry type: ' . $entry_type . ' | Is newsletter: ' . ($is_newsletter ? 'Yes' : 'No'));
     $header_title = $is_newsletter ? $post->post_title : $strings['press_release'];
     $post_title = $is_newsletter ? '' : $post->post_title;
+    $post_title_row = !$is_newsletter
+        ? '
+        <tr>
+            <td style="font-size:28px;font-weight:bold;color:' . esc_attr($corporate_color) . ';margin-bottom:20px;line-height:1.3;">
+                ' . esc_html($post_title) . '
+            </td>
+        </tr>'
+        : '';
 
     return '
         <tr>
@@ -1007,19 +1021,13 @@ function cimne_render_default_header($post, $entry_type, $strings, $corporate_co
                             <img width="180" height="auto" src="' . esc_url($header_logo) . '" style="display:block;max-width:100%;height:auto;" />
                         </td>
                         <td width="20"></td>
-                        <td valign="top" style="font-size:24px;font-weight:bold;color:#000;line-height:1.3;border-bottom:2px solid #000;padding-bottom:5px;">
+                        <td valign="top" style="font-size:22px;font-weight:bold;color:#000;line-height:1.3;border-bottom:2px solid #000;padding-bottom:5px;">
                             ' . esc_html($header_title) . '
                         </td>
                     </tr>
                 </table>
             </td>
-        </tr>
-        <tr>
-            <td style="font-size:28px;font-weight:bold;color:' . esc_attr($corporate_color) . ';margin-bottom:20px;line-height:1.3;">
-                ' . esc_html($post_title) . '
-            </td>
-        </tr>
-        <tr height="10"><td><br /></td></tr>';
+        </tr>' . $post_title_row;
 }
 
 function cimne_render_read_more_button($url, $text, $corporate_color) {
@@ -1173,6 +1181,7 @@ function cimne_build_email_html($post_ID) {
     <tr>
         <td align='center'>
             <table style='background-color:#ffffff;padding:40px;' width='650' cellpadding='0' cellspacing='0' border='0'>
+                <!-- if you can not read this email element -->
                 <tr>
                     <td style='font-size:28px;font-weight:bold;color:" . esc_attr($corporate_color) . ";margin-bottom:20px;line-height:1.3;'>
                         <p style='font-size:14px;color:#999999;margin-bottom:30px;'>
@@ -1183,28 +1192,24 @@ function cimne_build_email_html($post_ID) {
                         </p>
                     </td>
                 </tr>
-
+                <!-- header -->
                 {$header_html}
-
-                <tr>
-                    <td>{$event_fields_html}</td>
-                </tr>
-
-                <tr height='10'><td><br /></td></tr>
-
+                <!-- event custom fields (date, time, place...) -->
+                {$event_fields_html}
+                <!-- content -->
                 <tr>
                     <td style='font-size:14px;line-height:1.7;color:#333333;padding-bottom:35px;'>
                         {$content_html}
                     </td>
                 </tr>
-
+                <!-- read more button -->
                 <tr>
                     <td align='center' style='padding-bottom:40px;'>
                         {$button_html}
                     </td>
                 </tr>
             </table>
-
+            <!-- footer -->
             {$footer_html}
         </td>
     </tr>
@@ -1294,6 +1299,11 @@ function cimne_render_send_email_screen() {
             Copiar HTML
         </button>
 
+        <button id="downloadBtn"
+            style="margin-left:10px;padding:12px 20px;font-size:16px;background:#28a745;color:#fff;border:0;border-radius:6px;cursor:pointer;">
+            Descargar HTML
+        </button>
+
         <span id="status" style="margin-left:15px;color:green;display:none;">
             ✔ HTML copiado
         </span>
@@ -1321,6 +1331,8 @@ function cimne_render_send_email_screen() {
                 return false;
             }
         }
+
+        const downloadBtn = document.getElementById('downloadBtn');
 
         btn.addEventListener('click', async () => {
             let copied = false;
@@ -1350,6 +1362,20 @@ function cimne_render_send_email_screen() {
                     'Selecciona el contenido y copia manualmente (Ctrl+C / Cmd+C).'
                 );
             }
+        });
+
+        downloadBtn.addEventListener('click', () => {
+            const html = content.value;
+            const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+
+            link.href = url;
+            link.download = 'email.html';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
         });
         </script>
 
