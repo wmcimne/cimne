@@ -936,19 +936,52 @@ function cimne_clean_divi_html_for_email($html, $corporate_bg_color = '#d9e8f8',
         $html = preg_replace($pattern, $replacement, $html);
     }
 
+    // Ajusta las etiquetas <img> del HTML para que sean compatibles con email.
     $html = preg_replace_callback(
         '/<img([^>]*?)>/i',
         function ($matches) {
+            // Contenido dentro de la etiqueta img sin el nombre de la etiqueta.
             $img_tag = $matches[1];
+            // Estilo por defecto para imágenes en email.
             $style = 'max-width:100%;height:auto;display:block;margin:20px 0;';
+            $set_fixed_width = false;
+            $original_width = null;
+            $original_height = null;
 
+            // Detecta ancho original y decide si forzar ancho fijo a 600px.
+            if (preg_match('/\bwidth\s*=\s*("|\')?(\d+)(?:\1)?/i', $img_tag, $width_match)) {
+                $original_width = (int) $width_match[2];
+                $set_fixed_width = $original_width > 600;
+            }
+
+            // Detecta altura original si está presente.
+            if (preg_match('/\bheight\s*=\s*(?:"([^"]*)"|\'([^\']*)\'|([^\s>]+))/i', $img_tag, $height_match)) {
+                $original_height = $height_match[1] ?? $height_match[2] ?? $height_match[3];
+            }
+
+            // Elimina los atributos width/height originales para evitar conflictos.
+            $img_tag = preg_replace('/\s*(width|height)\s*=\s*("|\')[^\2]*?\2/i', '', $img_tag);
+            $img_tag = trim($img_tag);
+
+            // Añade o reemplaza el estilo existente con el estilo por defecto.
             if (preg_match('/style="([^"]*)"/i', $img_tag, $style_match)) {
                 $img_tag = preg_replace('/style="[^"]*"/i', 'style="' . esc_attr($style_match[1] . $style) . '"', $img_tag);
             } else {
                 $img_tag .= ' style="' . esc_attr($style) . '"';
             }
 
-            return '<img' . $img_tag . ' />';
+            // Si el ancho original es mayor de 600px, forzamos un ancho fijo de 600px.
+            if ($set_fixed_width) {
+                $img_tag .= ' width="600" height="auto"';
+            } elseif ($original_width !== null) {
+                // Si no se fuerza ancho fijo, restauramos las dimensiones originales.
+                $img_tag .= ' width="' . esc_attr($original_width) . '"';
+                if ($original_height !== null) {
+                    $img_tag .= ' height="' . esc_attr($original_height) . '"';
+                }
+            }
+
+            return '<img ' . $img_tag . ' />';
         },
         $html
     );
