@@ -264,6 +264,105 @@ div.toggle-background:has(div.background-parent-active-grey) {
     display: none !important;
 }
 
+/* ==========================================================
+   CIMNE AJAX Pagination - Global
+========================================================== */
+
+.cimne-ajax-pagination {
+    width: 100%;
+    margin-top: 50px;
+    text-align: center;
+}
+
+.cimne-ajax-pagination-nav {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+}
+
+.cimne-ajax-pagination-nav .page-numbers {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 42px;
+    height: 42px;
+    padding: 0 12px;
+    border: 1px solid #004996;
+    color: #004996;
+    background: transparent;
+    font-size: 15px;
+    font-weight: 500;
+    line-height: 1;
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+.cimne-ajax-pagination-nav a.page-numbers:hover,
+.cimne-ajax-pagination-nav .page-numbers.current {
+    background: #004996;
+    color: #fff;
+}
+
+.cimne-ajax-pagination-nav .page-numbers.current {
+    pointer-events: none;
+}
+
+.cimne-ajax-pagination-nav .pagination-arrow {
+    position: relative;
+    width: 42px;
+    min-width: 42px;
+    padding: 0;
+}
+
+.cimne-ajax-pagination-nav .pagination-arrow::before {
+    content: "";
+    width: 11px;
+    height: 11px;
+    border-top: 2px solid currentColor;
+    border-right: 2px solid currentColor;
+}
+
+.cimne-ajax-pagination-nav .pagination-prev::before {
+    transform: rotate(-135deg);
+    margin-left: 4px;
+}
+
+.cimne-ajax-pagination-nav .pagination-next::before {
+    transform: rotate(45deg);
+    margin-right: 4px;
+}
+
+.cimne-ajax-pagination.is-loading {
+    opacity: 0.35;
+    pointer-events: none;
+}
+
+@media (max-width: 767px) {
+    .cimne-ajax-pagination-nav {
+        gap: 6px;
+        flex-wrap: wrap;
+    }
+
+    .cimne-ajax-pagination-nav .page-numbers {
+        min-width: 36px;
+        height: 36px;
+        padding: 0 10px;
+        font-size: 14px;
+    }
+
+    .cimne-ajax-pagination-nav .pagination-arrow {
+        width: 36px;
+        min-width: 36px;
+    }
+
+    .cimne-ajax-pagination-nav .pagination-arrow::before {
+        width: 9px;
+        height: 9px;
+    }
+}
+
+
 /*--------------------------------------------------------------
   Estilos slick.js
 ----------------------------------------------------------------*/
@@ -2743,12 +2842,12 @@ p.no-results {
           justify-content: space-between;
 }
 
-.events-blog .attendance {
+/* .events-blog .attendance {
   display: -webkit-box;
   display: -ms-flexbox;
   display: flex;
   margin-top: 20px; 
-}
+} */
 
 .events-blog .attendance.hybrid::before {
   padding-right: 10px;
